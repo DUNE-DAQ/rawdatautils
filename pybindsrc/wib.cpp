@@ -85,6 +85,6 @@ register_wib(py::module& m)
 }
 
 } // namespace python
-} // namespace ssp
+} // namespace wib
 } // namespace timing
 } // namespace dunedaq
