@@ -23,12 +23,23 @@ namespace python {
 void
 register_unpack(py::module& m)
 {
-  m.def("np_array_adc_wib", &wib::np_array_adc);
-  m.def("np_array_timestamp_wib", &wib::np_array_timestamp);
-  m.def("np_array_adc_wib2", &wib2::np_array_adc);
-  m.def("np_array_timestamp_wib2", &wib2::np_array_timestamp);
-  m.def("np_array_adc_daphne", &daphne::np_array_adc);
-  m.def("np_array_timestamp_daphne", &daphne::np_array_timestamp);
+  py::module_ wib_module = m.def_submodule("wib");
+  wib_module.def("np_array_adc", &wib::np_array_adc);
+  wib_module.def("np_array_timestamp", &wib::np_array_timestamp);
+  wib_module.def("np_array_adc_data", &wib::np_array_adc_data);
+  wib_module.def("np_array_timestamp_data", &wib::np_array_timestamp_data);
+
+  py::module_ wib2_module = m.def_submodule("wib2");
+  wib_module.def("np_array_adc", &wib2::np_array_adc);
+  wib_module.def("np_array_timestamp", &wib2::np_array_timestamp);
+  wib_module.def("np_array_adc_data", &wib2::np_array_adc_data);
+  wib_module.def("np_array_timestamp_data", &wib2::np_array_timestamp_data);
+
+  py::module_ daphne_module = m.def_submodule("daphne");
+  wib_module.def("np_array_adc", &daphne::np_array_adc);
+  wib_module.def("np_array_timestamp", &daphne::np_array_timestamp);
+  wib_module.def("np_array_adc_data", &daphne::np_array_adc_data);
+  wib_module.def("np_array_timestamp_data", &daphne::np_array_timestamp_data);
 }
 
 } // namespace python
