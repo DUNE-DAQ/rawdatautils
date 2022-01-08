@@ -1,5 +1,6 @@
 from hdf5libs import DAQDecoder
 import daqdataformats
+from rawdatautils.unpack.wib import *
 import detdataformats.wib
 import click
 import time
@@ -38,13 +39,13 @@ def main(filename, tr_count):
             print(f'Time to decode with the python for loop       {time.time() - t0:.3f} s')
 
             t0 = time.time()
-            timestamps = detdataformats.wib.np_array_timestamp_data(frag.get_data(), n_frames)
-            ary = detdataformats.wib.np_array_adc_data(frag.get_data(), n_frames)
+            timestamps = np_array_timestamp_data(frag.get_data(), n_frames)
+            ary = np_array_adc_data(frag.get_data(), n_frames)
             print(f'Time to decode with the C++ -> numpy function {time.time() - t0:.3f} s')
 
             t0 = time.time()
-            timestamps = detdataformats.wib.np_array_timestamp(frag)
-            ary = detdataformats.wib.np_array_adc(frag)
+            timestamps = np_array_timestamp(frag)
+            ary = np_array_adc(frag)
             print(f'Time to decode with the C++ -> numpy function (with a Fragment as input) {time.time() - t0:.3f} s')
 
             if (adcs == ary).all() and (ts == timestamps).all():
