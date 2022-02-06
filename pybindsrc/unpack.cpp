@@ -6,10 +6,12 @@
  * received with this code.
  */
 
-#include "WIBUnpacker.cc"
-#include "WIB2Unpacker.cc"
-#include "DAPHNEUnpacker.cc"
+#include "detdataformats/wib/WIBFrame.hpp"
+#include "detdataformats/wib2/WIB2Frame.hpp"
+#include "detdataformats/daphne/DAPHNEFrame.hpp"
+#include "daqdataformats/Fragment.hpp"
 
+#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -17,6 +19,28 @@ namespace py = pybind11;
 
 namespace dunedaq {
 namespace rawdatautils {
+
+namespace wib {
+  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
+  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
+}
+
+namespace wib2 {
+  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
+  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
+}
+
+namespace daphne {
+  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
+  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
+}
+
 namespace unpack {
 namespace python {
 
