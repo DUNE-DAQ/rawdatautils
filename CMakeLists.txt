@@ -5,12 +5,14 @@ find_package(daq-cmake REQUIRED)
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 find_package(daqdataformats REQUIRED)
 find_package(detdataformats REQUIRED)
+find_package(hdf5libs REQUIRED)
 
 daq_setup_environment()
 
 ##############################################################################
 # Main library
-daq_add_library (WIBFragmentDecoder.cpp LINK_LIBRARIES)
+#daq_add_library (WIBFragmentDecoder.cpp LINK_LIBRARIES)
+daq_add_library (WIBFragmentDecoder.cpp SSPDecoder.cpp LINK_LIBRARIES hdf5libs::hdf5libs detdataformats::detdataformats)
 
 ##############################################################################
 daq_add_python_bindings(*.cpp LINK_LIBRARIES ${PROJECT_NAME} daqdataformats::daqdataformats detdataformats::detdataformats)

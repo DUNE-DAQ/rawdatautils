@@ -22,6 +22,7 @@ extern void register_unpack(py::module &);
 }
 
 namespace python {
+extern void register_sspdecoder(py::module &);
 
 PYBIND11_MODULE(_daq_rawdatautils_py, m) {
 
@@ -29,6 +30,7 @@ PYBIND11_MODULE(_daq_rawdatautils_py, m) {
 
     py::module_ unpack_module = m.def_submodule("unpack");
     unpack::python::register_unpack(unpack_module);
+    register_sspdecoder(m);
 
 }
 
