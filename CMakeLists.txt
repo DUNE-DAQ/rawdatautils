@@ -6,6 +6,7 @@ find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 find_package(daqdataformats REQUIRED)
 find_package(detdataformats REQUIRED)
 find_package(hdf5libs REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
 daq_setup_environment()
 
