@@ -1,4 +1,4 @@
-from hdf5libs import DAQDecoder
+import hdf5libs
 import daqdataformats
 from rawdatautils.unpack.wib import *
 import detdataformats.wib
@@ -13,12 +13,17 @@ def main(filename, tr_count):
     """Test the python WIBFrame decoders on an HDF5 file containing WIBFrames,
     for example np02_bde_coldbox_run011918_0001_20211029T122926.hdf5
     """
-    dec = DAQDecoder(filename, tr_count)
-    datasets = dec.get_datasets()
+    dd = hdf5libs.HDF5RawDataFile(filename)
+    # datasets = dec.get_datasets()
 
-    trname = [ name for name in datasets if 'TriggerRecordHeader' not in name]
-    for i, d in enumerate(trname):
-        frag = dec.get_frag_ptr(d)
+    # trname = [ name for name in datasets if 'TriggerRecordHeader' not in name]
+    records = dd.get_all_record_ids()
+    print(records)
+    for i, tr_num in enumerate([elem[0] for elem in records]):
+        print(tr_num)
+        frag_datasets = dd.get_fragment_dataset_paths(tr_num)
+        d = frag_datasets[0]
+        frag = dd.get_frag(d)
         frag_hdr = frag.get_header()
 
         n_frames = (frag.get_size()-frag_hdr.sizeof())//detdataformats.wib.WIBFrame.sizeof()
