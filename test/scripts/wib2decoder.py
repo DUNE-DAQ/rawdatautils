@@ -1,13 +1,27 @@
 from hdf5libs import HDF5RawDataFile
 
 import daqdataformats
-from rawdatautils.unpack.wib import *
-import detdataformats.wib
+import detdataformats.wib2
+from rawdatautils.unpack.wib2 import *
 import detchannelmaps
 
 import click
 import time
 import numpy as np
+
+def print_wib2_header(header):
+    print(f'\tVersion: {header.version}')
+    print(f'\tDetector ID: {header.detector_id}')
+    print(f'\t(Crate,Slot,Link): ({header.crate},{header.slot},{header.link})')
+    print(f'\t(Timestamp1,Timestamp2): ({header.timestamp_1},{header.timestamp_2})')
+    print(f'\tColddata Timestamp ID: {header.colddata_timestamp_id}')
+    print(f'\tFEMB Valid: {header.femb_valid}')
+    print(f'\tLink Mask: {header.link_mask}')
+    print(f'\tLock output status: {header.lock_output_status}')
+    print(f'\tFEMB Pulser Frame Bits: {header.femb_pulser_frame_bits}')
+    print(f'\tFEMB Sync Flags: {header.femb_sync_flags}')
+    print(f'\tColddata Timestamp: {header.colddata_timestamp}')
+
 
 @click.command()
 @click.argument('filename', type=click.Path(exists=True))
@@ -39,15 +53,20 @@ def main(filename, tr_count, channel_map):
 
             print(f'\tTrigger timestamp for fragment is {frag_ts}')
 
-            n_frames = (frag.get_size()-frag_hdr.sizeof())//detdataformats.wib.WIBFrame.sizeof()
+            n_frames = (frag.get_size()-frag_hdr.sizeof())//detdataformats.wib2.WIB2Frame.sizeof()
+            print(f'\tFound {n_frames} WIB2 Frames.')
+
+            wf = detdataformats.wib2.WIB2Frame(frag.get_data())
+            wh = wf.get_header()
+
+            print('====WIB HEADER 0====')
+            print_wib2_header(wh)
 
             if(offline_ch_num_dict.get(gid) is None):
                 if channel_map is None:
                     offline_ch_num_dict[gid] = range(256)
                 else:
-                    wf = detdataformats.wib.WIBFrame(frag.get_data())
-                    wh = wf.get_wib_header()
-                    offline_ch_num_dict[gid] = [ch_map.get_offline_channel_from_crate_slot_fiber_chan(wh.crate_no, wh.slot_no, wh.fiber_no, c) for c in range(256)]
+                    offline_ch_num_dict[gid] = [ch_map.get_offline_channel_from_crate_slot_fiber_chan(wh.crate, wh.slot, wh.link, c) for c in range(256)]
 
 
             #unpack timestamps into numpy array of uin64
@@ -57,9 +76,12 @@ def main(filename, tr_count, channel_map):
             adcs = np_array_adc(frag)
 
             adcs_rms = np.std(adcs,axis=0)
+            adcs_ped = np.mean(adcs,axis=0)
+
+            print('====WIB DATA====')
 
             for ch,rms in enumerate(adcs_rms):
-                print(f'\t\tch {offline_ch_num_dict[gid][ch]}: rms = {rms}')
+                print(f'\t\tch {offline_ch_num_dict[gid][ch]}: ped = {adcs_ped[ch]}, rms = {adcs_rms[ch]}')
 
         #end gid loop
     #end record loop
