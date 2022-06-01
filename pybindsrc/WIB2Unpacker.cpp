@@ -50,6 +50,23 @@ py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes){
 }
 
 /**
+ * @brief Unpacks data containing WIB2Frames into a numpy array with the
+ * timestamps with dimension (number of WIB2Frames)
+ * Warning: It doesn't check that nframes is a sensible value (can read out of bounds)
+ */
+py::array_t<uint16_t> np_array_coldata_timestamp_data(void* data, int nframes){
+  py::array_t<uint16_t> ret(nframes);
+  auto ptr = static_cast<uint16_t*>(ret.request().ptr);
+  for (size_t i=0; i<(size_t)nframes; ++i) {
+    auto fr = reinterpret_cast<detdataformats::wib2::WIB2Frame*>(static_cast<char*>(data) + i * sizeof(detdataformats::wib2::WIB2Frame));
+    ptr[i] = fr->header.colddata_timestamp;
+  }
+
+  return ret;
+}
+
+
+/**
  * @brief Unpacks a Fragment containing WIB2Frames into a numpy array with the
  * ADC values and dimension (number of WIB2Frames in the Fragment, 256)
  */
@@ -65,5 +82,12 @@ py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag){
   return np_array_timestamp_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::wib2::WIB2Frame));
 }
 
+/**
+ * @brief Unpacks the coldata timestamps in a Fragment containing WIBFrames into a numpy
+ * array with dimension (number of WIB2Frames in the Fragment)
+ */
+py::array_t<uint16_t> np_array_coldata_timestamp(daqdataformats::Fragment& frag){
+  return np_array_coldata_timestamp_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::wib2::WIB2Frame));
+}
 
 } // namespace dunedaq::rawdatautils::wib2 // NOLINT

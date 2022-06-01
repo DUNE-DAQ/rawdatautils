@@ -32,6 +32,10 @@ namespace wib2 {
   extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
   extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
   extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
+  extern py::array_t<uint16_t> np_array_coldata_timestamp(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_coldata_timestamp_data(void* data, int nframes);
+  extern py::array_t<detdataformats::wib2::WIB2Frame::Header> np_array_wibheader(daqdataformats::Fragment& frag);
+  extern py::array_t<detdataformats::wib2::WIB2Frame::Header> np_array_wibheader_data(void* data, int nframes);
 }
 
 namespace daphne {
@@ -56,8 +60,10 @@ register_unpack(py::module& m)
   py::module_ wib2_module = m.def_submodule("wib2");
   wib2_module.def("np_array_adc", &wib2::np_array_adc);
   wib2_module.def("np_array_timestamp", &wib2::np_array_timestamp);
+  wib2_module.def("np_array_coldata_timestamp", &wib2::np_array_coldata_timestamp);
   wib2_module.def("np_array_adc_data", &wib2::np_array_adc_data);
   wib2_module.def("np_array_timestamp_data", &wib2::np_array_timestamp_data);
+  wib2_module.def("np_array_coldata_timestamp_data", &wib2::np_array_coldata_timestamp_data);
 
   py::module_ daphne_module = m.def_submodule("daphne");
   daphne_module.def("np_array_adc", &daphne::np_array_adc);
@@ -65,7 +71,7 @@ register_unpack(py::module& m)
   daphne_module.def("np_array_adc_data", &daphne::np_array_adc_data);
   daphne_module.def("np_array_timestamp_data", &daphne::np_array_timestamp_data);
 
-  
+
 }
 
 } // namespace python

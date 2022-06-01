@@ -6,8 +6,12 @@
  * received with this code.
  */
 
+#include "detdataformats/wib2/WIB2Frame.hpp"
+
 #include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
 #include <pybind11/stl.h>
+
 
 namespace py = pybind11;
 
