@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from hdf5libs import HDF5RawDataFile
 
 import daqdataformats
