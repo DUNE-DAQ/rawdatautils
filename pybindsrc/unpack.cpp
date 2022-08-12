@@ -28,9 +28,10 @@ namespace wib {
 }
 
 namespace wib2 {
-  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
+  extern uint32_t n_wib2_frames(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag);
   extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
-  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
+  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
   extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
 }
 
@@ -54,6 +55,7 @@ register_unpack(py::module& m)
   wib_module.def("np_array_timestamp_data", &wib::np_array_timestamp_data);
 
   py::module_ wib2_module = m.def_submodule("wib2");
+  wib2_module.def("n_wib2_frames", &wib2::n_wib2_frames);
   wib2_module.def("np_array_adc", &wib2::np_array_adc);
   wib2_module.def("np_array_timestamp", &wib2::np_array_timestamp);
   wib2_module.def("np_array_adc_data", &wib2::np_array_adc_data);
