@@ -18,9 +18,9 @@ import numpy as np
 @click.option('--nrecords', '-n', default=-1, help='How many Trigger Records to process (default: all)')
 @click.option('--nskip', default=0, help='How many Trigger Records to skip (default: 0)')
 @click.option('--channel-map', default=None, help="Channel map to load (default: None)")
-@click.option('--print-headers', is_flag=True, help="Print WIB2Frame headers (default: True)")
-@click.option('--print-adc-stats', is_flag=True, help="Print ADC Pedestals/RMS (default: False)")
-@click.option('--check-timestamps', is_flag=True, help="Check WIB2 Frame Timestamps (default: True)")
+@click.option('--print-headers', is_flag=True, help="Print WIB2Frame headers")
+@click.option('--print-adc-stats', is_flag=True, help="Print ADC Pedestals/RMS")
+@click.option('--check-timestamps', is_flag=True, help="Check WIB2 Frame Timestamps")
 
 def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats, check_timestamps):
 
@@ -106,6 +106,14 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
 
             print("\n")
         #end gid loop
+
+        if check_timestamps:
+            timestamps_frame0 = np.array([ detdataformats.wib2.WIB2Frame(h5_file.get_frag(r,gid).get_data()).get_timestamp() for gid in wib_geo_ids ])
+            timestamps_frame0_diff = timestamps_frame0 - timestamps_frame0[0]
+            
+            print('\n\t==== TIMESTAMP ACROSS WIBS CHECK ====')
+            print(f'\t\tTimestamp diff relative to first WIB',timestamps_frame0_diff)
+        
     #end record loop
 
     print(f'Processed all requested records')
