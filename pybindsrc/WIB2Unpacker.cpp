@@ -16,6 +16,13 @@ namespace py = pybind11;
 namespace dunedaq::rawdatautils::wib2 {
 
 /**
+ * @brief Gets number of WIB2Frames in a fragment
+ */
+uint32_t n_wib2_frames(daqdataformats::Fragment const& frag){
+  return (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::wib2::WIB2Frame);
+}
+
+/**
  * @brief Unpacks data containing WIB2Frames into a numpy array with the ADC
  * values and dimension (number of WIB2Frames, 256)
  * Warning: It doesn't check that nframes is a sensible value (can read out of bounds)
@@ -53,16 +60,16 @@ py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes){
  * @brief Unpacks a Fragment containing WIB2Frames into a numpy array with the
  * ADC values and dimension (number of WIB2Frames in the Fragment, 256)
  */
-py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag){
-  return np_array_adc_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::wib2::WIB2Frame));
+py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag){
+  return np_array_adc_data(frag.get_data(), n_wib2_frames(frag));
 }
 
 /**
  * @brief Unpacks the timestamps in a Fragment containing WIBFrames into a numpy
  * array with dimension (number of WIB2Frames in the Fragment)
  */
-py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag){
-  return np_array_timestamp_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::wib2::WIB2Frame));
+py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag){
+  return np_array_timestamp_data(frag.get_data(), n_wib2_frames(frag));
 }
 
 
