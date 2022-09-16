@@ -18,9 +18,9 @@ import numpy as np
 @click.option('--nrecords', '-n', default=-1, help='How many Trigger Records to process (default: all)')
 @click.option('--nskip', default=0, help='How many Trigger Records to skip (default: 0)')
 @click.option('--channel-map', default=None, help="Channel map to load (default: None)")
-@click.option('--print-headers', is_flag=True, help="Print WIB2Frame headers (default: True)")
-@click.option('--print-adc-stats', is_flag=True, help="Print ADC Pedestals/RMS (default: False)")
-@click.option('--check-timestamps', is_flag=True, help="Check WIB2 Frame Timestamps (default: True)")
+@click.option('--print-headers', is_flag=True, help="Print WIB2Frame headers")
+@click.option('--print-adc-stats', is_flag=True, help="Print ADC Pedestals/RMS")
+@click.option('--check-timestamps', is_flag=True, help="Check WIB2 Frame Timestamps")
 
 def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats, check_timestamps):
 
@@ -45,6 +45,7 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
     if channel_map is not None:
         ch_map = detchannelmaps.make_map(channel_map)
     offline_ch_num_dict = {}
+    offline_ch_plane_dict = {}
 
     for r in records_to_process:
 
@@ -73,10 +74,12 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
             #fill channel map info if needed
             if(offline_ch_num_dict.get(gid) is None):
                 if channel_map is None:
-                    offline_ch_num_dict[gid] = range(256)
+                    offline_ch_num_dict[gid] = np.arange(256)
+                    offline_ch_plane_dict[gid] = np.full(256,9999)
                 else:
                     wh = wf.get_header()
-                    offline_ch_num_dict[gid] = [ch_map.get_offline_channel_from_crate_slot_fiber_chan(wh.crate, wh.slot, wh.link, c) for c in range(256)]
+                    offline_ch_num_dict[gid] = np.array([ch_map.get_offline_channel_from_crate_slot_fiber_chan(wh.crate, wh.slot, wh.link, c) for c in range(256)])
+                    offline_ch_plane_dict[gid] = np.array([ ch_map.get_plane_from_offline_channel(uc) for uc in offline_ch_num_dict[gid] ])
 
 
             #unpack timestamps into numpy array of uin64
@@ -102,10 +105,18 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
                 print('\n\t====WIB DATA====')
 
                 for ch,rms in enumerate(adcs_rms):
-                    print(f'\t\tch {offline_ch_num_dict[gid][ch]}: ped = {adcs_ped[ch]:.2f}, rms = {adcs_rms[ch]:.4f}')
+                    print(f'\t\tch {offline_ch_num_dict[gid][ch]} (plane {offline_ch_plane_dict[gid][ch]}): ped = {adcs_ped[ch]:.2f}, rms = {adcs_rms[ch]:.4f}')
 
             print("\n")
         #end gid loop
+
+        if check_timestamps:
+            timestamps_frame0 = np.array([ detdataformats.wib2.WIB2Frame(h5_file.get_frag(r,gid).get_data()).get_timestamp() for gid in wib_geo_ids ])
+            timestamps_frame0_diff = timestamps_frame0 - timestamps_frame0[0]
+            
+            print('\n\t==== TIMESTAMP ACROSS WIBS CHECK ====')
+            print(f'\t\tTimestamp diff relative to first WIB',timestamps_frame0_diff)
+        
     #end record loop
 
     print(f'Processed all requested records')
