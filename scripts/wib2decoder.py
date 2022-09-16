@@ -45,6 +45,7 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
     if channel_map is not None:
         ch_map = detchannelmaps.make_map(channel_map)
     offline_ch_num_dict = {}
+    offline_ch_plane_dict = {}
 
     for r in records_to_process:
 
@@ -73,10 +74,12 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
             #fill channel map info if needed
             if(offline_ch_num_dict.get(gid) is None):
                 if channel_map is None:
-                    offline_ch_num_dict[gid] = range(256)
+                    offline_ch_num_dict[gid] = np.arange(256)
+                    offline_ch_plane_dict[gid] = np.full(256,9999)
                 else:
                     wh = wf.get_header()
-                    offline_ch_num_dict[gid] = [ch_map.get_offline_channel_from_crate_slot_fiber_chan(wh.crate, wh.slot, wh.link, c) for c in range(256)]
+                    offline_ch_num_dict[gid] = np.array([ch_map.get_offline_channel_from_crate_slot_fiber_chan(wh.crate, wh.slot, wh.link, c) for c in range(256)])
+                    offline_ch_plane_dict[gid] = np.array([ ch_map.get_plane_from_offline_channel(uc) for uc in offline_ch_num_dict[gid] ])
 
 
             #unpack timestamps into numpy array of uin64
@@ -102,7 +105,7 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
                 print('\n\t====WIB DATA====')
 
                 for ch,rms in enumerate(adcs_rms):
-                    print(f'\t\tch {offline_ch_num_dict[gid][ch]}: ped = {adcs_ped[ch]:.2f}, rms = {adcs_rms[ch]:.4f}')
+                    print(f'\t\tch {offline_ch_num_dict[gid][ch]} (plane {offline_ch_plane_dict[gid][ch]}): ped = {adcs_ped[ch]:.2f}, rms = {adcs_rms[ch]:.4f}')
 
             print("\n")
         #end gid loop
