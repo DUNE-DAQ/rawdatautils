@@ -36,8 +36,12 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
             nrecords=-1
         else:
             nrecords=nskip+nrecords
-    
-    records_to_process = records[nskip:nrecords]
+
+    records_to_process = []
+    if nrecords==-1:
+        records_to_process = records[nskip:]
+    else:
+        records_to_process = records[nskip:nrecords]
     print(f'Will process {len(records_to_process)} of {len(records)} records.')
 
     #have channel numbers per geoid in here
