@@ -3,7 +3,7 @@
 from hdf5libs import HDF5RawDataFile
 
 import daqdataformats
-import detdataformats.wib2
+import detdataformats
 from rawdatautils.unpack.wib2 import *
 from rawdatautils.utilities.wib2 import *
 import detchannelmaps
@@ -36,8 +36,12 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
             nrecords=-1
         else:
             nrecords=nskip+nrecords
-    
-    records_to_process = records[nskip:nrecords]
+
+    records_to_process = []
+    if nrecords==-1:
+        records_to_process = records[nskip:]
+    else:
+        records_to_process = records[nskip:nrecords]
     print(f'Will process {len(records_to_process)} of {len(records)} records.')
 
     #have channel numbers per geoid in here
@@ -50,10 +54,11 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
     for r in records_to_process:
 
         print(f'Processing (Record Number,Sequence Number)=({r[0],r[1]})')
-        wib_geo_ids = h5_file.get_geo_ids(r,daqdataformats.GeoID.SystemType.kTPC)
+        wib_geo_ids = h5_file.get_geo_ids_for_subdetector(r,detdataformats.DetID.Subdetector.kHD_TPC)
 
         for gid in wib_geo_ids:
-            print(f'\tProcessing geoid {gid}')
+            hex_gid = format(gid, '016x')
+            print(f'\tProcessing geoid {hex_gid}')
 
             frag = h5_file.get_frag(r,gid)
             frag_hdr = frag.get_header()
