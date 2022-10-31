@@ -55,7 +55,8 @@ print(timestamp.shape) # (100, 256 if using wib2)
 ```
 Warning: `np_array_adc_data` and `np_array_timestamp_data` do not make any
 checks on the number of frames so if passed a value larger than the actual
-number of fragments it will try to read out of bounds. `np_array_adc` and
-`np_array_timestamp` call `np_array_adc_data` and `np_array_timestamp_data`
-under the hood with the correct checks on the number of frames.
+number of frames in the fragment it will try to read out of bounds.
+`np_array_adc` and `np_array_timestamp` call `np_array_adc_data` and
+`np_array_timestamp_data` under the hood with the correct checks on the number
+of frames.
 
