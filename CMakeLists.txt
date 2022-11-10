@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
-project(rawdatautils VERSION 1.2.1)
+project(rawdatautils VERSION 1.2.2)
 
 find_package(daq-cmake REQUIRED)
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
