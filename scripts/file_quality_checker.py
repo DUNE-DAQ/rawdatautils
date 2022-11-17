@@ -9,7 +9,7 @@ import glob
 import os
 from rawdatautils.unpack.wib2 import *
 from rawdatautils.utilities.wib2 import *
-
+import sys
 
 import click
 import time
@@ -18,7 +18,7 @@ import numpy as np
 
 @click.command()
 @click.argument('filenames', nargs=-1)
-@click.option('--nrecords', '-n', default=-1, help='How many Trigger Records to process (default: all)')
+@click.option('--nrecords', '-n', default=-1, help='How many Records to process (default: all)')
 
 def main(filenames, nrecords):
     
@@ -33,33 +33,61 @@ def main(filenames, nrecords):
             sys.exit(f"ERROR: file \"{filename}\" couldn't be opened; is it an HDF5 file?")
 
         print(f"Processing {filename}...")
-        records = h5file.get_all_trigger_record_ids()
+
+        is_trigger_records = True
+        try:
+            records = h5file.get_all_trigger_record_ids()
+        except:
+            is_trigger_records = False
+
+        if not is_trigger_records:
+            try:
+                records = h5file.get_all_timeslice_ids()
+            except:
+                sys.exit(f"ERROR: neither get_all_trigger_record_ids() nor get_all_timeslice_ids() returned records")
+    
 
         records_to_process = []
         if nrecords==-1:
             records_to_process = records
         else:
             records_to_process = records[:nrecords]
-        print(f'Will process {len(records_to_process)} of {len(records)} trigger records.')
 
-        sequence_ids = [] # print only if a problem
+        if is_trigger_records:
+            print(f'Will process {len(records_to_process)} of {len(records)} trigger records.')
+        else:
+            print(f'Will process {len(records_to_process)} of {len(records)} timeslice records.')
+            
+        sequence_ids = [] 
+        record_ids = []
         tr_global_stats = {}
 
+        assumed_sequence_id_step = -1
+        assumed_record_id_step = -1
+        first_sequence_id = -1
+        first_record_id = -1
+        
         for i_r, r in enumerate(records_to_process):
 
             for i_quadrant in range(1,4):
                 if i_r == i_quadrant * len(records_to_process)/4:
                     print(f"Processed {i_r} of {len(records_to_process)} records...")
-            
-            #print("")
-            #print(f'Processing (Record Number,Sequence Number)=({r[0],r[1]})')
-            dset_paths = h5file.get_fragment_dataset_paths(r)
+
+            record_ids.append(r[0])
             sequence_ids.append(r[1])
+                    
+            if i_r == 0:
+                first_record_id = r[0]
+                first_sequence_id = r[1]
+            elif i_r == 1:
+                assumed_record_id_step = r[0] - first_record_id
+                assumed_sequence_id_step = r[1] - first_sequence_id
+                    
+            dset_paths = h5file.get_fragment_dataset_paths(r)
             tr_stats = {}
 
             for dset_path in dset_paths:
                 frag = h5file.get_frag(dset_path)
-                #print(f"{frag.get_fragment_type()} {frag.get_trigger_number()} {frag.get_sequence_number()} {frag.get_size()}") #  {int(frag.get_error_bits())}
                 if frag.get_fragment_type() in tr_stats:
                     tr_stats[ frag.get_fragment_type()]["count" ] += 1
                     if frag.get_size() > tr_stats[ frag.get_fragment_type() ]["max_size" ]:
@@ -89,16 +117,33 @@ def main(filenames, nrecords):
 
         print(f"Processed {len(records_to_process)} of {len(records_to_process)} records...")
         print("")
-        if len(set(sequence_ids)) == 1:
-            print(f"All sequence #'s are the same, {sequence_ids[0]}")
-        elif len(set(sequence_ids)) == len(sequence_ids) and \
-             max(sequence_ids) - min(sequence_ids) + 1 == len(sequence_ids):
-            print(f"All sequence #'s follow one another, counting from {min(sequence_ids)} to {max(sequence_ids)}")
+
+        sequence_ids_ok = True
+        for i_s, seqid in enumerate(sequence_ids):
+            if i_s > 0:
+                if seqid - sequence_ids[i_s - 1] != assumed_sequence_id_step:
+                    sequence_ids_ok = False
+
+        record_ids_ok = True
+        for i_r, recid in enumerate(record_ids):
+            if i_r > 0:
+                if recid - record_ids[i_r - 1] != assumed_record_id_step:
+                    record_ids_ok = False
+
+        if record_ids_ok:
+            print(f"Progression of record ids over records looks ok (expected change of {assumed_record_id_step} for each new record)")
         else:
-            print("Sequence #'s are neither identical nor increasing one-by-one: ")
+            print("Unexpected progression of record ids over records")
+            print(" ".join([str(recid) for recid in record_ids]))
+                    
+        if sequence_ids_ok:
+            print(f"Progression of sequence ids over records looks ok (expected change of {assumed_sequence_id_step} for each new record)")
+        else:
+            print("Unexpected progression of sequence numbers over records: ")
             print(" ".join([str(seqid) for seqid in sequence_ids]))
-            print("")
+
         print("")
+            
 
         frag_type_phrase_length = max([len(str(fragname)) - len("FragmentType.") for fragname in tr_global_stats]) + 1
         max_count_phrase = " max # in a record "
