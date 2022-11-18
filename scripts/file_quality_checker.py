@@ -5,11 +5,13 @@ from hdf5libs import HDF5RawDataFile
 import detchannelmaps
 import daqdataformats
 import detdataformats
+import gc
 import glob
 import os
 from rawdatautils.unpack.wib2 import *
 from rawdatautils.utilities.wib2 import *
 import sys
+import time
 
 import click
 import time
@@ -26,7 +28,7 @@ def main(filenames, nrecords):
 
         if not os.path.exists(filename):
             sys.exit(f"ERROR: file \"{filename}\" doesn't appear to exist")
-        
+
         try:
             h5file = HDF5RawDataFile(filename)
         except:
@@ -169,6 +171,9 @@ def main(filenames, nrecords):
             print("-" * (frag_type_phrase_length + len(min_count_phrase) + len(max_count_phrase) +
                          len(min_size_phrase) + len(max_size_phrase) + 5))
         print("")
+
+        del h5file
+        gc.collect()
             
 if __name__ == '__main__':
     main()
