@@ -152,22 +152,22 @@ def main(filenames, nrecords):
         min_size_phrase = " min size in a record (bytes) "
 
         fmtstring=f"%-{frag_type_phrase_length}s|%s|%s|%s|%s"
-        print(fmtstring % (" FragType ", max_count_phrase, min_count_phrase, max_size_phrase, min_size_phrase))
+        print(fmtstring % (" FragType ", min_count_phrase, max_count_phrase, min_size_phrase, max_size_phrase))
 
-        print("-" * (frag_type_phrase_length + len(max_count_phrase) + len(min_count_phrase) +
-                     len(max_size_phrase) + len(min_size_phrase) + 5))
+        print("-" * (frag_type_phrase_length + len(min_count_phrase) + len(max_count_phrase) +
+                     len(min_size_phrase) + len(max_size_phrase) + 5))
         
         for frag_type in tr_global_stats:
-            fmtstring = f"%-{frag_type_phrase_length}s|%-{len(max_count_phrase)}s|%-{len(min_count_phrase)}s|%-{len(max_size_phrase)}s|%-{len(min_size_phrase)}s|"
+            fmtstring = f"%-{frag_type_phrase_length}s|%-{len(min_count_phrase)}s|%-{len(max_count_phrase)}s|%-{len(min_size_phrase)}s|%-{len(max_size_phrase)}s|"
             print(fmtstring % (str(frag_type).replace("FragmentType.",""),
-                               tr_global_stats[frag_type]["max_count"],
                                tr_global_stats[frag_type]["min_count"],
-                               tr_global_stats[frag_type]["max_size"],
-                               tr_global_stats[frag_type]["min_size"]
+                               tr_global_stats[frag_type]["max_count"],
+                               tr_global_stats[frag_type]["min_size"],
+                               tr_global_stats[frag_type]["max_size"]
                                ))
 
-            print("-" * (frag_type_phrase_length + len(max_count_phrase) + len(min_count_phrase) +
-                         len(max_size_phrase) + len(min_size_phrase) + 5))
+            print("-" * (frag_type_phrase_length + len(min_count_phrase) + len(max_count_phrase) +
+                         len(min_size_phrase) + len(max_size_phrase) + 5))
         print("")
             
 if __name__ == '__main__':
