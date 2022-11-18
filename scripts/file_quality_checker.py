@@ -12,6 +12,7 @@ from rawdatautils.unpack.wib2 import *
 from rawdatautils.utilities.wib2 import *
 import sys
 import time
+import traceback
 
 import click
 import time
@@ -32,23 +33,30 @@ def main(filenames, nrecords):
         try:
             h5file = HDF5RawDataFile(filename)
         except:
+            print(traceback.format_exc())
             sys.exit(f"ERROR: file \"{filename}\" couldn't be opened; is it an HDF5 file?")
 
         print(f"Processing {filename}...")
 
         is_trigger_records = True
+        
         try:
             records = h5file.get_all_trigger_record_ids()
-        except:
+        except RuntimeError:
             is_trigger_records = False
+        except:
+            print(traceback.format_exc())
+            sys.exit("ERROR: Something went wrong when calling h5file.get_all_trigger_record_ids(); file may contain junk data or be corrupted. Exiting...\n")
 
         if not is_trigger_records:
             try:
                 records = h5file.get_all_timeslice_ids()
+            except RuntimeError:
+                sys.exit(f"Neither get_all_trigger_record_ids() nor get_all_timeslice_ids() returned records. Exiting...\n")
             except:
-                sys.exit(f"ERROR: neither get_all_trigger_record_ids() nor get_all_timeslice_ids() returned records")
-    
-
+                print(traceback.format_exc())
+                sys.exit("ERROR: Something went wrong when calling h5file.get_all_timeslice_ids(); file may contain junk data or be corrupted. Exiting...\n")
+        
         records_to_process = []
         if nrecords==-1:
             records_to_process = records
@@ -72,7 +80,7 @@ def main(filenames, nrecords):
         for i_r, r in enumerate(records_to_process):
 
             for i_quadrant in range(1,4):
-                if i_r == i_quadrant * len(records_to_process)/4:
+                if i_r == i_quadrant * int(len(records_to_process)/4):
                     print(f"Processed {i_r} of {len(records_to_process)} records...")
 
             record_ids.append(r[0])
