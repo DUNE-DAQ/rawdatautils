@@ -18,13 +18,15 @@ import click
 import time
 import numpy as np
 
-
 @click.command()
 @click.argument('filenames', nargs=-1)
-@click.option('--nrecords', '-n', default=-1, help='How many Records to process (default: all)')
+def main(filenames):
+    """
+This script provides a high-level summary of the records in an output HDF5 file and the fragments which they contain.
 
-def main(filenames, nrecords):
-    
+It simply takes a filename, or list of filenames, as argument(s) and summarizes each one sequentially.
+"""
+
     for filename in filenames:
 
         if not os.path.exists(filename):
@@ -57,16 +59,10 @@ def main(filenames, nrecords):
                 print(traceback.format_exc())
                 sys.exit("ERROR: Something went wrong when calling h5file.get_all_timeslice_ids(); file may contain junk data or be corrupted. Exiting...\n")
         
-        records_to_process = []
-        if nrecords==-1:
-            records_to_process = records
-        else:
-            records_to_process = records[:nrecords]
-
         if is_trigger_records:
-            print(f'Will process {len(records_to_process)} of {len(records)} trigger records.')
+            print(f'Will process {len(records)} trigger records.')
         else:
-            print(f'Will process {len(records_to_process)} of {len(records)} timeslice records.')
+            print(f'Will process {len(records)} timeslice records.')
             
         sequence_ids = [] 
         record_ids = []
@@ -77,11 +73,11 @@ def main(filenames, nrecords):
         first_sequence_id = -1
         first_record_id = -1
         
-        for i_r, r in enumerate(records_to_process):
+        for i_r, r in enumerate(records):
 
             for i_quadrant in range(1,4):
-                if i_r == i_quadrant * int(len(records_to_process)/4):
-                    print(f"Processed {i_r} of {len(records_to_process)} records...")
+                if i_r == i_quadrant * int(len(records)/4):
+                    print(f"Processed {i_r} of {len(records)} records...")
 
             record_ids.append(r[0])
             sequence_ids.append(r[1])
@@ -105,7 +101,11 @@ def main(filenames, nrecords):
                     if frag.get_size() < tr_stats[ frag.get_fragment_type()]["min_size" ]:
                         tr_stats[ frag.get_fragment_type()]["min_size" ] = frag.get_size()
                 else:
-                    tr_stats[ frag.get_fragment_type() ] = { "count":1, "max_size": frag.get_size(), "min_size": frag.get_size() }
+                    tr_stats[ frag.get_fragment_type() ] = { "count": 1, "nonzero_error_bits_count": 0, "max_size": frag.get_size(), "min_size": frag.get_size() }
+
+                if frag.get_header().error_bits != 0:
+                        tr_stats[ frag.get_fragment_type() ]["nonzero_error_bits_count"] += 1
+                    
 
             for frag_type in tr_stats:
                 if frag_type in tr_global_stats:
@@ -113,6 +113,11 @@ def main(filenames, nrecords):
                         tr_global_stats[frag_type]["max_count"] = tr_stats[frag_type]["count"]
                     if tr_stats[frag_type]["count"] < tr_global_stats[frag_type]["min_count"]:
                         tr_global_stats[frag_type]["min_count"] = tr_stats[frag_type]["count"]
+                    if tr_stats[frag_type]["nonzero_error_bits_count"] > tr_global_stats[frag_type]["nonzero_error_bits_max_count"]:
+                        tr_global_stats[frag_type]["nonzero_error_bits_max_count"] = tr_stats[frag_type]["nonzero_error_bits_count"]
+                    if tr_stats[frag_type]["nonzero_error_bits_count"] < tr_global_stats[frag_type]["nonzero_error_bits_min_count"]:
+                        tr_global_stats[frag_type]["nonzero_error_bits_min_count"] = tr_stats[frag_type]["nonzero_error_bits_count"]
+
                     if tr_stats[frag_type]["max_size"] > tr_global_stats[frag_type]["max_size"]:
                         tr_global_stats[frag_type]["max_size"] = tr_stats[frag_type]["max_size"]
                     if tr_stats[frag_type]["min_size"] < tr_global_stats[frag_type]["min_size"]:
@@ -122,10 +127,12 @@ def main(filenames, nrecords):
                     tr_global_stats[frag_type] = { "max_count": tr_stats[frag_type]["count"],
                                                    "min_count": tr_stats[frag_type]["count"],
                                                    "max_size": tr_stats[frag_type]["max_size"],
-                                                   "min_size": tr_stats[frag_type]["min_size"]
+                                                   "min_size": tr_stats[frag_type]["min_size"],
+                                                   "nonzero_error_bits_min_count": tr_stats[frag_type]["nonzero_error_bits_count"],
+                                                   "nonzero_error_bits_max_count": tr_stats[frag_type]["nonzero_error_bits_count"]
                                                    }
 
-        print(f"Processed {len(records_to_process)} of {len(records_to_process)} records...")
+        print(f"Processed {len(records)} of {len(records)} records...")
         print("")
 
         sequence_ids_ok = True
@@ -143,41 +150,45 @@ def main(filenames, nrecords):
         if record_ids_ok:
             print(f"Progression of record ids over records looks ok (expected change of {assumed_record_id_step} for each new record)")
         else:
-            print("Unexpected progression of record ids over records")
+            print("Non-constant progression of record ids over records. This may or may not be a problem.")
             print(" ".join([str(recid) for recid in record_ids]))
                     
         if sequence_ids_ok:
             print(f"Progression of sequence ids over records looks ok (expected change of {assumed_sequence_id_step} for each new record)")
         else:
-            print("Unexpected progression of sequence numbers over records: ")
+            print("Non-contant progression of sequence ids over records. This may or may not be a problem.")
             print(" ".join([str(seqid) for seqid in sequence_ids]))
 
         print("")
             
 
         frag_type_phrase_length = max([len(str(fragname)) - len("FragmentType.") for fragname in tr_global_stats]) + 1
-        max_count_phrase = " max # in a record "
-        min_count_phrase = " min # in a record "
-        max_size_phrase = " max size in a record (bytes) "
-        min_size_phrase = " min size in a record (bytes) "
+        max_count_phrase = "max # in rec"
+        min_count_phrase = "min # in rec"
+        max_size_phrase = "largest (B)"
+        min_size_phrase = "smallest (B)"
+        max_errs_phrase = "max err in rec"
+        min_errs_phrase = "min err in rec"
 
-        fmtstring=f"%-{frag_type_phrase_length}s|%s|%s|%s|%s"
-        print(fmtstring % (" FragType ", min_count_phrase, max_count_phrase, min_size_phrase, max_size_phrase))
+        fmtstring=f"%-{frag_type_phrase_length}s|%s|%s|%s|%s|%s|%s|"
+        print(fmtstring % (" FragType ", min_count_phrase, max_count_phrase, min_size_phrase, max_size_phrase, min_errs_phrase, max_errs_phrase))
 
-        print("-" * (frag_type_phrase_length + len(min_count_phrase) + len(max_count_phrase) +
-                     len(min_size_phrase) + len(max_size_phrase) + 5))
+        divider = "-" * (frag_type_phrase_length + len(min_count_phrase) + len(max_count_phrase) +
+                     len(min_size_phrase) + len(max_size_phrase) + len(max_errs_phrase) + len(min_errs_phrase) + 7)
+        print(divider)
         
         for frag_type in tr_global_stats:
-            fmtstring = f"%-{frag_type_phrase_length}s|%-{len(min_count_phrase)}s|%-{len(max_count_phrase)}s|%-{len(min_size_phrase)}s|%-{len(max_size_phrase)}s|"
+            fmtstring = f"%-{frag_type_phrase_length}s|%-{len(min_count_phrase)}s|%-{len(max_count_phrase)}s|%-{len(min_size_phrase)}s|%-{len(max_size_phrase)}s|%-{len(min_errs_phrase)}s|%-{len(max_errs_phrase)}s|"
             print(fmtstring % (str(frag_type).replace("FragmentType.",""),
                                tr_global_stats[frag_type]["min_count"],
                                tr_global_stats[frag_type]["max_count"],
                                tr_global_stats[frag_type]["min_size"],
-                               tr_global_stats[frag_type]["max_size"]
-                               ))
+                               tr_global_stats[frag_type]["max_size"],
+                               tr_global_stats[frag_type]["nonzero_error_bits_min_count"],
+                               tr_global_stats[frag_type]["nonzero_error_bits_max_count"])
+                               )
 
-            print("-" * (frag_type_phrase_length + len(min_count_phrase) + len(max_count_phrase) +
-                         len(min_size_phrase) + len(max_size_phrase) + 5))
+            print(divider)
         print("")
 
         del h5file
