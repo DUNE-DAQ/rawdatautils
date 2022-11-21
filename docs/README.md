@@ -1,5 +1,34 @@
 # rawdatautils
 
+## General Utilities
+
+### `file_quality_checker.py`
+
+This script simply takes a list of HDF5 files produced by the DAQ (globs of course would work on the command line), loops over their records (whether trigger records or timeslices) and performs a few sanity checks. The output of the script when run on one file looks something like the following:
+```
+Processing /data2/np04_hd_run018000_0009_dataflow0_datawriter_0_20221118T091751.hdf5.copied...
+Will process 27 trigger records.
+Processed 6 of 27 records...
+Processed 12 of 27 records...
+Processed 18 of 27 records...
+Processed 27 of 27 records...
+
+Progression of record ids over records looks ok (expected change of 1 for each new record)
+Progression of sequence ids over records looks ok (expected change of 0 for each new record)
+
+ FragType         |min # in rec|max # in rec|smallest (B)|largest (B)|min err in rec|max err in rec|
+----------------------------------------------------------------------------------------------------
+kWIB              |40          |40          |3866696     |3866696    |0             |0             |
+----------------------------------------------------------------------------------------------------
+kHardwareSignal   |1           |1           |96          |96         |1             |1             |
+----------------------------------------------------------------------------------------------------
+kTriggerCandidate |1           |1           |128         |128        |1             |1             |
+----------------------------------------------------------------------------------------------------
+```
+Concerning the progression of record ids and sequence ids: the script will look at the change in record id and sequence id between the first and second records in the file, and extrapolate that as the normal step size. If this step size is violated, then the full list of id values gets printed; otherwise simple one-sentence summaries such as you see above get printed. 
+
+Concerning the table: each row corresponds to a fragment type found in at least one record in the file. The first and second columns tell you the fewest instances of such a fragment found in a single record, and the most. Of course, these are typically the same value. The third and fourth columns tell you what the smallest and largest examples of this fragment were in the entire file. The fifth and sixth columns tell you the fewest instances of a fragment with a nonzero set of error bits, and the most, in a single record. Of course for these last two columns you'd ideally see all 0's. 
+
 ## WIB2	Utilities
 
 ### `wib2decoder.py`
