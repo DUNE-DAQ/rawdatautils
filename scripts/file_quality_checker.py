@@ -25,6 +25,10 @@ def main(filenames):
 This script provides a high-level summary of the records in an output HDF5 file and the fragments which they contain.
 
 It simply takes a filename, or list of filenames, as argument(s) and summarizes each one sequentially.
+
+For info on how to interpret the output, look at rawdatautils documentation:
+https://dune-daq-sw.readthedocs.io/en/latest/packages/rawdatautils/
+
 """
 
     for filename in filenames:
