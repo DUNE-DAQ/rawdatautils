@@ -4,6 +4,11 @@
 
 ### `file_quality_checker.py`
 
+Usage:
+```
+file_quality_checker.py <FILENAME1> [FILENAME2 ...]
+```
+
 This script simply takes a list of HDF5 files produced by the DAQ (globs of course would work on the command line), loops over their records (whether trigger records or timeslices) and performs a few sanity checks. The output of the script when run on one file looks something like the following:
 ```
 Processing /data2/np04_hd_run018000_0009_dataflow0_datawriter_0_20221118T091751.hdf5.copied...
