@@ -94,3 +94,14 @@ number of frames in the fragment it will try to read out of bounds.
 `np_array_timestamp_data` under the hood with the correct checks on the number
 of frames.
 
+## File conversion
+It's possible to transform binary files using the old `WIBFrame` format to the
+newer `WIB2Frame` format. That means that the ADC values will be preserved, as
+well as other values found in the header such as the crate, slot, fiber number.
+The timestamps will be overwritten to differ by 32 to avoid warnings and other
+issues when these files are being read by readout. In python:
+
+```
+from rawdatautils import file_conversion
+file_conversion.convert_file('/path/to/input/file', '/path/to/output/file')
+```
