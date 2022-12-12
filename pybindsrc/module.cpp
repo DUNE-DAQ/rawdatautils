@@ -11,25 +11,25 @@
 
 namespace py = pybind11;
 
-
 namespace dunedaq {
 namespace rawdatautils {
 
-namespace unpack{
+namespace unpack {
 namespace python {
-extern void register_unpack(py::module &);
+extern void
+register_unpack(py::module&);
 }
 }
 
 namespace python {
 
-PYBIND11_MODULE(_daq_rawdatautils_py, m) {
+PYBIND11_MODULE(_daq_rawdatautils_py, m)
+{
 
-    m.doc() = "c++ implementation of the dunedaq rawdatautils modules"; // optional module docstring
+  m.doc() = "c++ implementation of the dunedaq rawdatautils modules"; // optional module docstring
 
-    py::module_ unpack_module = m.def_submodule("unpack");
-    unpack::python::register_unpack(unpack_module);
-
+  py::module_ unpack_module = m.def_submodule("unpack");
+  unpack::python::register_unpack(unpack_module);
 }
 
 } // namespace python
