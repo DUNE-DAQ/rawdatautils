@@ -96,12 +96,24 @@ of frames.
 
 ## File conversion
 It's possible to transform binary files using the old `WIBFrame` format to the
-newer `WIB2Frame` format. That means that the ADC values will be preserved, as
-well as other values found in the header such as the crate, slot, fiber number.
-The timestamps will be overwritten to differ by 32 to avoid warnings and other
-issues when these files are being read by readout. In python:
+newer `WIB2Frame` or `WIBEthFrame` format. That means that the ADC values will
+be preserved, as well as other values found in the header such as the crate,
+slot, fiber number. The timestamps will be overwritten to differ by 32 (by 32 *
+64 for `WIBEthFrame`) to avoid warnings and other issues when these files are
+being read by readout. In python:
 
+For WIB -> WIB2
 ```
 from rawdatautils import file_conversion
-file_conversion.convert_file('/path/to/input/file', '/path/to/output/file')
+file_conversion.wib_binary_to_wib2_binary('/path/to/input/file', '/path/to/output/file')
 ```
+and for WIB -> WIBEth
+```
+from rawdatautils import file_conversion
+file_conversion.wib_binary_to_wibeth_binary('/path/to/input/file', '/path/to/output/file')
+```
+
+When transforming WIB -> WIBEth it will create 4 files lblecause `WIBFrames`
+have 256 channels and `WIBEthFrames` have 64, so the first file has the first 64
+channels, the second file has the next 64 channels and so on.
+

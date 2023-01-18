@@ -7,6 +7,7 @@
  */
 
 #include "rawdatautils/WIBtoWIB2.hpp"
+#include "rawdatautils/WIBtoWIBEth.hpp"
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -23,7 +24,10 @@ namespace python {
 void
 register_file_conversion(py::module& m)
 {
-  m.def("convert_file", &wibftowib2f);
+  m.def("wib_hdf5_to_wib2_binary", &wib_hdf5_to_wib2_binary);
+  m.def("wib_binary_to_wib2_binary", &wib_binary_to_wib2_binary);
+  m.def("wib_hdf5_to_wibeth_binary", &wib_hdf5_to_wibeth_binary);
+  m.def("wib_binary_to_wibeth_binary", &wib_binary_to_wibeth_binary);
 }
 
 } // namespace python

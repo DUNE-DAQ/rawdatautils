@@ -16,7 +16,8 @@
 #include "detdataformats/wib/WIBFrame.hpp"
 #include "detdataformats/wib2/WIB2Frame.hpp"
 
-namespace dunedaq::rawdatautils {
+namespace dunedaq {
+namespace rawdatautils {
 
 detdataformats::wib2::WIB2Frame
 wibtowib2(detdataformats::wib::WIBFrame* fr, uint64_t timestamp=0) {
@@ -34,13 +35,14 @@ wibtowib2(detdataformats::wib::WIBFrame* fr, uint64_t timestamp=0) {
 }
 
 void
-wibftowib2f(std::string& filename, std::string& output) {
+wib_binary_to_wib2_binary(std::string& filename, std::string& output) {
   std::ifstream file(filename.c_str(), std::ios::binary);
   std::ofstream out(output.c_str(), std::ios::binary);
   std::cout << "Transforming " << filename << " to " << output << '\n';
   auto size = std::filesystem::file_size(filename);
   std::vector<char> v(size);
   file.read(v.data(), size);
+  file.close();
   int num_frames = size / sizeof(detdataformats::wib::WIBFrame);
   std::cout << "Number of frames found: "<< num_frames << '\n';
   auto ptr = reinterpret_cast<detdataformats::wib::WIBFrame*>(v.data());
@@ -50,7 +52,7 @@ wibftowib2f(std::string& filename, std::string& output) {
   while(num_frames--){
     auto new_ts = ptr->get_timestamp();
     if ((new_ts - first_timestamp) != count++ * 25) {
-      std::cout << "Timestamp " << new_ts << "doesn't differ by 25 from the previous timestamp";
+      std::cout << "Timestamp " << new_ts << " doesn't differ by 25 from the previous timestamp";
       std::cout << ", it will be overwritten " << '\n';
     }
     auto wib2fr = wibtowib2(ptr, timestamp);
@@ -58,11 +60,15 @@ wibftowib2f(std::string& filename, std::string& output) {
     ptr++;
     out.write(reinterpret_cast<char*>(&wib2fr), sizeof(wib2fr));
   }
-  file.close();
   out.close();
+}
+
+void
+wib_hdf5_to_wib2_binary(std::string& filename, std::string& output) {
 }
 
 
 } // namespace dunedaq::rawdatautils
+}
 
 #endif // RAWDATAUTILS_INCLUDE_WIBTOWIB2_HPP_
