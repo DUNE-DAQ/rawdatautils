@@ -21,8 +21,9 @@ import numpy as np
 @click.option('--print-headers', is_flag=True, help="Print WIB2Frame headers")
 @click.option('--print-adc-stats', is_flag=True, help="Print ADC Pedestals/RMS")
 @click.option('--check-timestamps', is_flag=True, help="Check WIB2 Frame Timestamps")
+@click.option('--det', default='HD_TPC', help='Subdetector string (default: HD_TPC)')
 
-def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats, check_timestamps):
+def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats, check_timestamps, det):
 
     h5_file = HDF5RawDataFile(filename)
 
@@ -54,7 +55,7 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
     for r in records_to_process:
 
         print(f'Processing (Record Number,Sequence Number)=({r[0],r[1]})')
-        wib_geo_ids = h5_file.get_geo_ids_for_subdetector(r,detdataformats.DetID.Subdetector.kHD_TPC)
+        wib_geo_ids = h5_file.get_geo_ids_for_subdetector(r,detdataformats.DetID.string_to_subdetector(det))
 
         for gid in wib_geo_ids:
             geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
