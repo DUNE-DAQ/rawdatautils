@@ -21,6 +21,12 @@ extern void register_unpack(py::module &);
 }
 }
 
+namespace fc{
+namespace python {
+extern void register_file_conversion(py::module &);
+}
+}
+
 namespace python {
 
 PYBIND11_MODULE(_daq_rawdatautils_py, m) {
@@ -29,6 +35,9 @@ PYBIND11_MODULE(_daq_rawdatautils_py, m) {
 
     py::module_ unpack_module = m.def_submodule("unpack");
     unpack::python::register_unpack(unpack_module);
+
+    py::module_ fc_module = m.def_submodule("file_conversion");
+    fc::python::register_file_conversion(fc_module);
 
 }
 
