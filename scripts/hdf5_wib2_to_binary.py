@@ -73,8 +73,8 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = 'Python script to write WIB2 frames from DUNE-DAQ HDF5 files to binary files.')
     parser.add_argument(dest = "file_name", help = 'path to HDF5 file')
-    parser.add_argument("-l", "--link", dest = "link", type = int, help = "fragment to converto binary", required = True)
-    parser.add_argument('-n', '--num-of-records', dest = "n_records", type = int, help = 'specify number of records to be parsed', default = 0, required = True)
+    parser.add_argument("-l", "--link", dest = "link", type = int, help = "link number to conver to binary", required = True)
+    parser.add_argument('-n', '--num-of-records', dest = "n_records", type = int, help = 'specify number of records to be parsed, -1 will parse all records', default = 0, required = True)
     parser.add_argument("--debug", dest = "debug", action = "store_true", help = "Debugging information")
     args = parser.parse_args()
     debug = args.debug
