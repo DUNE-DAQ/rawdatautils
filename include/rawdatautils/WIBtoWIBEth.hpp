@@ -32,7 +32,9 @@ wibtowibeth(detdataformats::wib::WIBFrame* fr, uint64_t timestamp=0, int startin
   res.daq_header.crate_id = header->crate_no;
   res.daq_header.slot_id = header->slot_no;
   res.daq_header.stream_id = header->fiber_no;
+  res.set_channel(starting_channel);
   res.set_timestamp(timestamp);
+  res.header.extra_data = 0xdeadbeef0badface;
   return res;
 }
 
@@ -45,6 +47,8 @@ wib_binary_to_wibeth_binary(std::string& filename, std::string& output) {
   file.read(v.data(), size);
   file.close();
   std::cout << "Number of frames found: "<< size / sizeof(detdataformats::wib::WIBFrame) << '\n';
+
+  std::ofstream out(output.c_str(), std::ios::binary);
   std::vector<int> starting_channel {0, 64, 128, 192};
   for (auto& sc : starting_channel) {
     auto ptr = reinterpret_cast<detdataformats::wib::WIBFrame*>(v.data());
@@ -52,7 +56,6 @@ wib_binary_to_wibeth_binary(std::string& filename, std::string& output) {
     uint64_t first_timestamp = timestamp;
     int count = 0;
     int num_frames = size / sizeof(detdataformats::wib::WIBFrame);
-    std::ofstream out((output + "_" + std::to_string(sc / 64)).c_str(), std::ios::binary);
     while(num_frames >= 64){
       auto new_ts = ptr->get_timestamp();
       if ((new_ts - first_timestamp) != count++ * (25 * 64)) {
