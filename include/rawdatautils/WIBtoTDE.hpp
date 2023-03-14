@@ -20,7 +20,7 @@ namespace dunedaq {
 namespace rawdatautils {
 
 detdataformats::tde::TDE16Frame
-wibtotde(detdataformats::wib::WIBFrame* fr, uint64_t timestamp=0) {
+wibtotde(detdataformats::wib::WIBFrame* fr, uint64_t timestamp=0, uint16_t ch=0) {
   detdataformats::tde::TDE16Frame res;
   // leave ADCs empty for now
 
@@ -28,13 +28,14 @@ wibtotde(detdataformats::wib::WIBFrame* fr, uint64_t timestamp=0) {
   res.get_tde_header()->version = header->version;
   res.get_tde_header()->crate = header->crate_no;
   res.get_tde_header()->slot = header->slot_no;
-  res.get_tde_header()->link = header->fiber_no;
+  res.get_tde_header()->link = ch;
   res.set_timestamp(timestamp);
   return res;
 }
 
 void
 wib_binary_to_tde_binary(std::string& filename, std::string& output) {
+  //FIXME: this is temporary.... we take 1 WIB frame and invent TDE frames from it... ADC values not set
   std::ifstream file(filename.c_str(), std::ios::binary);
   std::ofstream out(output.c_str(), std::ios::binary);
   std::cout << "Transforming " << filename << " to " << output << '\n';
@@ -48,10 +49,12 @@ wib_binary_to_tde_binary(std::string& filename, std::string& output) {
   auto ptr = reinterpret_cast<detdataformats::wib::WIBFrame*>(v.data());
   uint64_t timestamp = ptr->get_timestamp();
   while(num_frames--){
-    auto tdefr = wibtotde(ptr, timestamp);
+    for (uint16_t i = 0; i < 64; i++) {	  
+       auto tdefr = wibtotde(ptr, timestamp, i);
+       out.write(reinterpret_cast<char*>(&tdefr), sizeof(tdefr));
+    }
     timestamp += (32*4472);
     ptr++;
-    out.write(reinterpret_cast<char*>(&tdefr), sizeof(tdefr));
   }
   out.close();
 }

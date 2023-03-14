@@ -53,15 +53,8 @@ wib_binary_to_wibeth_binary(std::string& filename, std::string& output) {
   for (auto& sc : starting_channel) {
     auto ptr = reinterpret_cast<detdataformats::wib::WIBFrame*>(v.data());
     uint64_t timestamp = ptr->get_timestamp();
-    uint64_t first_timestamp = timestamp;
-    int count = 0;
     int num_frames = size / sizeof(detdataformats::wib::WIBFrame);
     while(num_frames >= 64){
-      auto new_ts = ptr->get_timestamp();
-      if ((new_ts - first_timestamp) != count++ * (25 * 64)) {
-        std::cout << "Timestamp " << new_ts << " doesn't differ by 25 from the previous timestamp";
-        std::cout << ", it will be overwritten " << '\n';
-      }
       auto wibethfr = wibtowibeth(ptr, timestamp, sc);
       timestamp += 32 * 64;
       ptr += 64;
@@ -74,7 +67,7 @@ wib_binary_to_wibeth_binary(std::string& filename, std::string& output) {
 }
 
 void
-wib_hdf5_to_wibeth_binary(std::string& filename, std::string& output) {
+wib_hdf5_to_wibeth_binary(std::string& /*filename*/, std::string& /*output*/) {
 }
 
 
