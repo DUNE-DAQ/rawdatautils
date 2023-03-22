@@ -54,10 +54,10 @@ namespace wibeth {
 
 namespace tde {
   extern uint32_t n_tde_frames(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
   extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
   extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
+  extern py::array_t<uint64_t> np_array_channel_data(void* data, int nframes);
+
 }
 
 namespace unpack {
@@ -92,10 +92,9 @@ register_unpack(py::module& m)
   wibeth_module.def("np_array_timestamp_data", &wibeth::np_array_timestamp_data);
 
   py::module_ tde_module = m.def_submodule("tde");
-  tde_module.def("np_array_adc", &tde::np_array_adc);
-  tde_module.def("np_array_timestamp", &tde::np_array_timestamp);
-  tde_module.def("np_array_adc_data", &tde::np_array_adc_data);
+  tde_module.def("n_tde_frames", &tde::n_tde_frames);
   tde_module.def("np_array_timestamp_data", &tde::np_array_timestamp_data);
+  tde_module.def("np_array_channel_data", &tde::np_array_channel_data);
   
 }
 

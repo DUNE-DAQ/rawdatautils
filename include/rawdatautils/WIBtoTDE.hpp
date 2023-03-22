@@ -13,6 +13,7 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include "detdataformats/DetID.hpp"
 #include "detdataformats/wib/WIBFrame.hpp"
 #include "detdataformats/tde/TDE16Frame.hpp"
 
@@ -20,16 +21,21 @@ namespace dunedaq {
 namespace rawdatautils {
 
 detdataformats::tde::TDE16Frame
-wibtotde(detdataformats::wib::WIBFrame* fr, uint64_t timestamp=0, uint16_t ch=0) {
+wibtotde(detdataformats::wib::WIBFrame* fr, uint64_t timestamp, uint16_t ch) {
   detdataformats::tde::TDE16Frame res;
   // leave ADCs empty for now
+  for (auto i=0; i<4472; i++) {
+	res.set_adc_samples(ch,i);
+  }
 
   auto header = fr->get_wib_header();
   res.get_tde_header()->version = header->version;
+  res.get_tde_header()->det_id = 11;
   res.get_tde_header()->crate = header->crate_no;
   res.get_tde_header()->slot = header->slot_no;
-  res.get_tde_header()->link = ch;
+  res.set_channel(ch);
   res.set_timestamp(timestamp);
+  std::cout << " Generated frame with TS " << timestamp << " for channel " << ch << std::endl;
   return res;
 }
 
