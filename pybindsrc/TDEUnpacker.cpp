@@ -27,22 +27,24 @@ uint32_t n_tde_frames(daqdataformats::Fragment const& frag){
  * timestamps/channel with dimension (number of TDE16Frames)
  * Warning: It doesn't check that nframes is a sensible value (can read out of bounds)
  */
-py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes){
+py::array_t<uint64_t> np_array_timestamp_data(daqdataformats::Fragment const& frag){
+  size_t nframes = (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::tde::TDE16Frame);
   py::array_t<uint64_t> ret(nframes);
   auto ptr = static_cast<uint64_t*>(ret.request().ptr);
-  for (size_t i=0; i<(size_t)nframes; ++i) {
-    auto fr = reinterpret_cast<detdataformats::tde::TDE16Frame*>(static_cast<char*>(data) + i * sizeof(detdataformats::tde::TDE16Frame));
+  for (size_t i=0; i<(size_t)nframes; i++) {
+    auto fr = reinterpret_cast<detdataformats::tde::TDE16Frame*>(static_cast<char*>(frag.get_data()) + i * sizeof(detdataformats::tde::TDE16Frame));
     ptr[i] = fr->get_timestamp();
   }
 
   return ret;
 }
 
-py::array_t<uint64_t> np_array_channel_data(void* data, int nframes){
+py::array_t<uint64_t> np_array_channel_data(daqdataformats::Fragment const& frag){
+  size_t nframes = (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::tde::TDE16Frame);
   py::array_t<uint64_t> ret(nframes);
   auto ptr = static_cast<uint64_t*>(ret.request().ptr);
-  for (size_t i=0; i<(size_t)nframes; ++i) {
-    auto fr = reinterpret_cast<detdataformats::tde::TDE16Frame*>(static_cast<char*>(data) + i * sizeof(detdataformats::tde::TDE16Frame));
+  for (size_t i=0; i<(size_t)nframes; i++) {
+    auto fr = reinterpret_cast<detdataformats::tde::TDE16Frame*>(static_cast<char*>(frag.get_data()) + i * sizeof(detdataformats::tde::TDE16Frame));
     ptr[i] = fr->get_channel();
   }
 

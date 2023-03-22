@@ -57,22 +57,17 @@ def main(filename, nrecords, nskip, print_headers, det):
             frag_ts = frag.get_trigger_timestamp()
 
             print(f'\tTrigger timestamp for fragment is {frag_ts}')
-
+            times = np_array_timestamp_data(frag);
+            channels = np_array_channel_data(frag);
             n_frames = n_tde_frames(frag);
-            if n_frames > 0:
-                wf = detdataformats.tde.TDE16Frame(frag.get_data())
-                print(f'\t taken raw data')
-                times = np_array_timestamp_data(wf,n_frames)
-                print(f'\t taken TS.')
-                channels = np_array_channel_data(wf,n_frames)
-                print(f'\tFound {n_frames} TDE Frames.')
+            print(f'\tFound {n_frames} TDE Frames.')
 
             
             #n_frames = 5
             #print header info
-                if print_headers :
-                    for i in range (0,n_frames):
-                        print(f'{times[i]=} {channels[i]=}')
+            if print_headers :
+                for i in range (0,n_frames):
+                    print(f'{times[i]=} {channels[i]=}')
 
             print("\n")
         

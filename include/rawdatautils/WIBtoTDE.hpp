@@ -24,7 +24,7 @@ detdataformats::tde::TDE16Frame
 wibtotde(detdataformats::wib::WIBFrame* fr, uint64_t timestamp, uint16_t ch) {
   detdataformats::tde::TDE16Frame res;
   // leave ADCs empty for now
-  for (auto i=0; i<4472; i++) {
+  for (auto i=0; i<4474; i++) {
 	res.set_adc_samples(ch,i);
   }
 
@@ -59,7 +59,7 @@ wib_binary_to_tde_binary(std::string& filename, std::string& output) {
        auto tdefr = wibtotde(ptr, timestamp, i);
        out.write(reinterpret_cast<char*>(&tdefr), sizeof(tdefr));
     }
-    timestamp += (32*4472);
+    timestamp += (32*4474);
     ptr++;
   }
   out.close();

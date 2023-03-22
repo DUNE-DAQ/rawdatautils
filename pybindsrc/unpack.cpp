@@ -55,8 +55,8 @@ namespace wibeth {
 namespace tde {
   extern uint32_t n_tde_frames(daqdataformats::Fragment const& frag);
   extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
-  extern py::array_t<uint64_t> np_array_channel_data(void* data, int nframes);
+  extern py::array_t<uint64_t> np_array_timestamp_data(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint64_t> np_array_channel_data(daqdataformats::Fragment const& frag);
 
 }
 
