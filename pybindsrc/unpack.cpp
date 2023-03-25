@@ -15,10 +15,23 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <fmt/core.h>
+
 namespace py = pybind11;
 
 namespace dunedaq {
 namespace rawdatautils {
+
+void print_hex_fragment(daqdataformats::Fragment const& frag) {
+  uint64_t* data = static_cast<uint64_t*>(frag.get_data());
+  size_t data_size = (frag.get_size() - sizeof(daqdataformats::FragmentHeader))/8;
+
+  for ( size_t i(0); i<data_size; ++i) {
+    std::cout << fmt::format("{:06d} 0x{:016x}", i, data[i]) << std::endl;
+  }
+
+}
+
 
 namespace wib {
   extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
@@ -35,6 +48,15 @@ namespace wib2 {
   extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
 }
 
+namespace wibeth {
+  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc_data(void* data, uint32_t n_frames);
+  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, uint32_t n_frames);
+}
+
+
 namespace daphne {
   extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
   extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
@@ -46,8 +68,10 @@ namespace unpack {
 namespace python {
 
 void
-register_unpack(py::module& m)
-{
+register_unpack(py::module& m) {
+
+  m.def("print_hex_fragment", &print_hex_fragment);
+
   py::module_ wib_module = m.def_submodule("wib");
   wib_module.def("np_array_adc", &wib::np_array_adc);
   wib_module.def("np_array_timestamp", &wib::np_array_timestamp);
@@ -60,6 +84,14 @@ register_unpack(py::module& m)
   wib2_module.def("np_array_timestamp", &wib2::np_array_timestamp);
   wib2_module.def("np_array_adc_data", &wib2::np_array_adc_data);
   wib2_module.def("np_array_timestamp_data", &wib2::np_array_timestamp_data);
+
+  py::module_ wibeth_module = m.def_submodule("wibeth");
+  wibeth_module.def("get_n_frames", &wibeth::get_n_frames);
+  wibeth_module.def("np_array_adc", &wibeth::np_array_adc);
+  wibeth_module.def("np_array_timestamp", &wibeth::np_array_timestamp);
+  wibeth_module.def("np_array_adc_data", &wibeth::np_array_adc_data);
+  wibeth_module.def("np_array_timestamp_data", &wibeth::np_array_timestamp_data);
+
 
   py::module_ daphne_module = m.def_submodule("daphne");
   daphne_module.def("np_array_adc", &daphne::np_array_adc);
