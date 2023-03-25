@@ -27,7 +27,7 @@ void print_hex_fragment(daqdataformats::Fragment const& frag) {
   size_t data_size = (frag.get_size() - sizeof(daqdataformats::FragmentHeader))/8;
 
   for ( size_t i(0); i<data_size; ++i) {
-    std::cout << fmt::format("{:06d} 0x{:016x}", i, data[i]) << std::endl;
+    fmt::print("{:06d} 0x{:016x}\n", i, data[i]);
   }
 
 }
