@@ -24,7 +24,7 @@ detdataformats::tde::TDE16Frame
 wibtotde(detdataformats::wib::WIBFrame* fr, uint64_t timestamp, uint16_t ch) {
   detdataformats::tde::TDE16Frame res;
   // leave ADCs empty for now
-  for (auto i=0; i<4474; i++) {
+  for (auto i=0; i < dunedaq::detdataformats::tde::tot_adc16_samples; i++) {
 	res.set_adc_samples(ch,i);
   }
 
@@ -55,11 +55,11 @@ wib_binary_to_tde_binary(std::string& filename, std::string& output) {
   auto ptr = reinterpret_cast<detdataformats::wib::WIBFrame*>(v.data());
   uint64_t timestamp = ptr->get_timestamp();
   while(num_frames--){
-    for (uint16_t i = 0; i < 64; i++) {	  
+    for (uint16_t i = 0; i < dunedaq::detdataformats::tde::n_channels_per_frame; i++) {	  
        auto tdefr = wibtotde(ptr, timestamp, i);
        out.write(reinterpret_cast<char*>(&tdefr), sizeof(tdefr));
     }
-    timestamp += (32*4474);
+    timestamp += (dunedaq::detdataformats::tde::tot_adc16_samples * dunedaq::detdataformats::tde::ticks_between_adc_samples);
     ptr++;
   }
   out.close();
