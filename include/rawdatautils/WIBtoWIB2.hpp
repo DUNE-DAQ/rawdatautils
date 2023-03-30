@@ -47,14 +47,7 @@ wib_binary_to_wib2_binary(std::string& filename, std::string& output) {
   std::cout << "Number of frames found: "<< num_frames << '\n';
   auto ptr = reinterpret_cast<detdataformats::wib::WIBFrame*>(v.data());
   uint64_t timestamp = ptr->get_timestamp();
-  uint64_t first_timestamp = timestamp;
-  int count = 0;
   while(num_frames--){
-    auto new_ts = ptr->get_timestamp();
-    if ((new_ts - first_timestamp) != count++ * 25) {
-      std::cout << "Timestamp " << new_ts << " doesn't differ by 25 from the previous timestamp";
-      std::cout << ", it will be overwritten " << '\n';
-    }
     auto wib2fr = wibtowib2(ptr, timestamp);
     timestamp += 32;
     ptr++;
@@ -64,7 +57,7 @@ wib_binary_to_wib2_binary(std::string& filename, std::string& output) {
 }
 
 void
-wib_hdf5_to_wib2_binary(std::string& filename, std::string& output) {
+wib_hdf5_to_wib2_binary(std::string& /*filename*/, std::string& /*output*/) {
 }
 
 
