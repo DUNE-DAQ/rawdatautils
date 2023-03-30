@@ -18,7 +18,7 @@ namespace dunedaq::rawdatautils::tde {
 /**
  * @brief Gets number of TDE16Frames in a fragment
  */
-uint32_t n_tde_frames(daqdataformats::Fragment const& frag){
+uint32_t get_n_frames(daqdataformats::Fragment const& frag){
   return (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::tde::TDE16Frame);
 }
 

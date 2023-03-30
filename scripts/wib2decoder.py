@@ -69,7 +69,7 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
 
             print(f'\tTrigger timestamp for fragment is {frag_ts}')
 
-            n_frames = n_wib2_frames(frag);
+            n_frames = get_n_frames(frag);
             print(f'\tFound {n_frames} WIB2 Frames.')
 
             wf = detdataformats.wib2.WIB2Frame(frag.get_data())
