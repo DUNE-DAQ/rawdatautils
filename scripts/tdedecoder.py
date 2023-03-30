@@ -59,7 +59,7 @@ def main(filename, nrecords, nskip, print_headers, det):
             print(f'\tTrigger timestamp for fragment is {frag_ts}')
             times = np_array_timestamp_data(frag);
             channels = np_array_channel_data(frag);
-            n_frames = n_tde_frames(frag);
+            n_frames = get_n_frames(frag);
             print(f'\tFound {n_frames} TDE Frames.')
 
             

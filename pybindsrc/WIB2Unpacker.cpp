@@ -18,7 +18,7 @@ namespace dunedaq::rawdatautils::wib2 {
 /**
  * @brief Gets number of WIB2Frames in a fragment
  */
-uint32_t n_wib2_frames(daqdataformats::Fragment const& frag){
+uint32_t get_n_frames(daqdataformats::Fragment const& frag){
   return (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::wib2::WIB2Frame);
 }
 
@@ -61,7 +61,7 @@ py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes){
  * ADC values and dimension (number of WIB2Frames in the Fragment, 256)
  */
 py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag){
-  return np_array_adc_data(frag.get_data(), n_wib2_frames(frag));
+  return np_array_adc_data(frag.get_data(), get_n_frames(frag));
 }
 
 /**
@@ -69,7 +69,7 @@ py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag){
  * array with dimension (number of WIB2Frames in the Fragment)
  */
 py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag){
-  return np_array_timestamp_data(frag.get_data(), n_wib2_frames(frag));
+  return np_array_timestamp_data(frag.get_data(), get_n_frames(frag));
 }
 
 
