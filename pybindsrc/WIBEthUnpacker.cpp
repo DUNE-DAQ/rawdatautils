@@ -55,6 +55,7 @@ py::array_t<uint16_t> np_array_adc_data(void* data, uint32_t n_frames){
   result.resize({n_frames*n_smpl, n_ch});
 
   return result;
+
 }
 
 /**
@@ -88,6 +89,7 @@ py::array_t<uint64_t> np_array_timestamp_data(void* data, uint32_t n_frames){
  */
 py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag){
   return np_array_adc_data(frag.get_data(), get_n_frames(frag));
+
 }
 
 /**

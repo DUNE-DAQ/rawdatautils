@@ -9,6 +9,8 @@
 #include "detdataformats/wib/WIBFrame.hpp"
 #include "detdataformats/wib2/WIB2Frame.hpp"
 #include "detdataformats/daphne/DAPHNEFrame.hpp"
+#include "detdataformats/wibeth/WIBEthFrame.hpp"
+#include "detdataformats/tde/TDE16Frame.hpp"
 #include "daqdataformats/Fragment.hpp"
 
 #include <pybind11/numpy.h>
@@ -64,6 +66,22 @@ namespace daphne {
   extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
 }
 
+namespace wibeth {
+  extern uint32_t n_wibeth_frames(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
+  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
+}
+
+namespace tde {
+  extern uint32_t n_tde_frames(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_data(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint64_t> np_array_channel_data(daqdataformats::Fragment const& frag);
+
+}
+
 namespace unpack {
 namespace python {
 
@@ -99,6 +117,16 @@ register_unpack(py::module& m) {
   daphne_module.def("np_array_adc_data", &daphne::np_array_adc_data);
   daphne_module.def("np_array_timestamp_data", &daphne::np_array_timestamp_data);
 
+  py::module_ wibeth_module = m.def_submodule("wibeth");
+  wibeth_module.def("np_array_adc", &wibeth::np_array_adc);
+  wibeth_module.def("np_array_timestamp", &wibeth::np_array_timestamp);
+  wibeth_module.def("np_array_adc_data", &wibeth::np_array_adc_data);
+  wibeth_module.def("np_array_timestamp_data", &wibeth::np_array_timestamp_data);
+
+  py::module_ tde_module = m.def_submodule("tde");
+  tde_module.def("n_tde_frames", &tde::n_tde_frames);
+  tde_module.def("np_array_timestamp_data", &tde::np_array_timestamp_data);
+  tde_module.def("np_array_channel_data", &tde::np_array_channel_data);
   
 }
 
