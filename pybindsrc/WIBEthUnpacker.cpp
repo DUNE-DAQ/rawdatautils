@@ -6,7 +6,7 @@
  * received with this code.
  */
 
-#include "detdataformats/wibeth/WIBEthFrame.hpp"
+#include "fddetdataformats/WIBEthFrame.hpp"
 #include "daqdataformats/Fragment.hpp"
 
 #include <cstdint>
@@ -21,7 +21,7 @@ namespace dunedaq::rawdatautils::wibeth {
  * @brief Gets number of WIBEthFrames in a fragment
  */
 uint32_t get_n_frames(daqdataformats::Fragment const& frag){
-  return (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::wibeth::WIBEthFrame);
+  return (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::WIBEthFrame);
 }
 
 /**
@@ -31,8 +31,8 @@ uint32_t get_n_frames(daqdataformats::Fragment const& frag){
  */
 py::array_t<uint16_t> np_array_adc_data(void* data, uint32_t n_frames){
 
-  uint32_t n_ch = detdataformats::wibeth::WIBEthFrame::s_num_channels;
-  uint32_t n_smpl = detdataformats::wibeth::WIBEthFrame::s_time_samples_per_frame;
+  uint32_t n_ch = fddetdataformats::WIBEthFrame::s_num_channels;
+  uint32_t n_smpl = fddetdataformats::WIBEthFrame::s_time_samples_per_frame;
 
   py::array_t<uint16_t> result(n_ch * n_smpl * n_frames);
 
@@ -42,8 +42,8 @@ py::array_t<uint16_t> np_array_adc_data(void* data, uint32_t n_frames){
   
   for (size_t i=0; i<n_frames; ++i) {
 
-    auto fr = reinterpret_cast<detdataformats::wibeth::WIBEthFrame*>(
-      static_cast<char*>(data) + i * sizeof(detdataformats::wibeth::WIBEthFrame)
+    auto fr = reinterpret_cast<fddetdataformats::WIBEthFrame*>(
+      static_cast<char*>(data) + i * sizeof(fddetdataformats::WIBEthFrame)
     );
 
     for (size_t j=0; j<n_smpl; ++j){
@@ -65,15 +65,15 @@ py::array_t<uint16_t> np_array_adc_data(void* data, uint32_t n_frames){
  */
 py::array_t<uint64_t> np_array_timestamp_data(void* data, uint32_t n_frames){
 
-  uint32_t n_smpl = detdataformats::wibeth::WIBEthFrame::s_time_samples_per_frame;
+  uint32_t n_smpl = fddetdataformats::WIBEthFrame::s_time_samples_per_frame;
 
   py::array_t<uint64_t> result(n_smpl*n_frames);
 
   auto ptr = static_cast<uint64_t*>(result.request().ptr);
   
   for (size_t i=0; i<n_frames; ++i) {
-    auto fr = reinterpret_cast<detdataformats::wibeth::WIBEthFrame*>(
-      static_cast<char*>(data) + i * sizeof(detdataformats::wibeth::WIBEthFrame)
+    auto fr = reinterpret_cast<fddetdataformats::WIBEthFrame*>(
+      static_cast<char*>(data) + i * sizeof(fddetdataformats::WIBEthFrame)
     );
     uint64_t ts_0 = fr->get_timestamp();
     for(size_t j=0; j<n_smpl; ++j )

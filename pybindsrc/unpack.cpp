@@ -6,11 +6,11 @@
  * received with this code.
  */
 
-#include "detdataformats/wib/WIBFrame.hpp"
-#include "detdataformats/wib2/WIB2Frame.hpp"
-#include "detdataformats/daphne/DAPHNEFrame.hpp"
-#include "detdataformats/wibeth/WIBEthFrame.hpp"
-#include "detdataformats/tde/TDE16Frame.hpp"
+#include "fddetdataformats/WIBFrame.hpp"
+#include "fddetdataformats/WIB2Frame.hpp"
+#include "fddetdataformats/DAPHNEFrame.hpp"
+#include "fddetdataformats/WIBEthFrame.hpp"
+#include "fddetdataformats/TDE16Frame.hpp"
 #include "daqdataformats/Fragment.hpp"
 
 #include <pybind11/numpy.h>

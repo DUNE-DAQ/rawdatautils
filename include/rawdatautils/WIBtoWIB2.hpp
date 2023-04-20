@@ -13,15 +13,15 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
-#include "detdataformats/wib/WIBFrame.hpp"
-#include "detdataformats/wib2/WIB2Frame.hpp"
+#include "fddetdataformats/WIBFrame.hpp"
+#include "fddetdataformats/WIB2Frame.hpp"
 
 namespace dunedaq {
 namespace rawdatautils {
 
-detdataformats::wib2::WIB2Frame
-wibtowib2(detdataformats::wib::WIBFrame* fr, uint64_t timestamp=0) {
-  detdataformats::wib2::WIB2Frame res;
+fddetdataformats::WIB2Frame
+wibtowib2(fddetdataformats::WIBFrame* fr, uint64_t timestamp=0) {
+  fddetdataformats::WIB2Frame res;
   for (int i = 0; i < 256; ++i) {
     res.set_adc(i, fr->get_channel(i));
   }
@@ -43,9 +43,9 @@ wib_binary_to_wib2_binary(std::string& filename, std::string& output) {
   std::vector<char> v(size);
   file.read(v.data(), size);
   file.close();
-  int num_frames = size / sizeof(detdataformats::wib::WIBFrame);
+  int num_frames = size / sizeof(fddetdataformats::WIBFrame);
   std::cout << "Number of frames found: "<< num_frames << '\n';
-  auto ptr = reinterpret_cast<detdataformats::wib::WIBFrame*>(v.data());
+  auto ptr = reinterpret_cast<fddetdataformats::WIBFrame*>(v.data());
   uint64_t timestamp = ptr->get_timestamp();
   while(num_frames--){
     auto wib2fr = wibtowib2(ptr, timestamp);

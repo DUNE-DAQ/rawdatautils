@@ -14,17 +14,17 @@
 #include <fstream>
 #include <filesystem>
 #include "detdataformats/DetID.hpp"
-#include "detdataformats/wib/WIBFrame.hpp"
-#include "detdataformats/tde/TDE16Frame.hpp"
+#include "fddetdataformats/WIBFrame.hpp"
+#include "fddetdataformats/TDE16Frame.hpp"
 
 namespace dunedaq {
 namespace rawdatautils {
 
-detdataformats::tde::TDE16Frame
-wibtotde(detdataformats::wib::WIBFrame* fr, uint64_t timestamp, uint16_t ch) {
-  detdataformats::tde::TDE16Frame res;
+fddetdataformats::TDE16Frame
+wibtotde(fddetdataformats::WIBFrame* fr, uint64_t timestamp, uint16_t ch) {
+  fddetdataformats::TDE16Frame res;
   // leave ADCs empty for now
-  for (auto i=0; i < dunedaq::detdataformats::tde::tot_adc16_samples; i++) {
+  for (auto i=0; i < dunedaq::fddetdataformats::tot_adc16_samples; i++) {
 	res.set_adc_sample(ch,i);
   }
 
@@ -49,17 +49,17 @@ wib_binary_to_tde_binary(std::string& filename, std::string& output) {
   std::vector<char> v(size);
   file.read(v.data(), size);
   file.close();
-  int num_frames = size / sizeof(detdataformats::wib::WIBFrame);
+  int num_frames = size / sizeof(fddetdataformats::WIBFrame);
   if (num_frames > 10 ) num_frames = 10;
   std::cout << "Number of frames found: "<< num_frames << '\n';
-  auto ptr = reinterpret_cast<detdataformats::wib::WIBFrame*>(v.data());
+  auto ptr = reinterpret_cast<fddetdataformats::WIBFrame*>(v.data());
   uint64_t timestamp = ptr->get_timestamp();
   while(num_frames--){
-    for (uint16_t i = 0; i < dunedaq::detdataformats::tde::n_channels_per_amc; i++) {	  
+    for (uint16_t i = 0; i < dunedaq::fddetdataformats::n_channels_per_amc; i++) {	  
        auto tdefr = wibtotde(ptr, timestamp, i);
        out.write(reinterpret_cast<char*>(&tdefr), sizeof(tdefr));
     }
-    timestamp += (dunedaq::detdataformats::tde::tot_adc16_samples * dunedaq::detdataformats::tde::ticks_between_adc_samples);
+    timestamp += (dunedaq::fddetdataformats::tot_adc16_samples * dunedaq::fddetdataformats::ticks_between_adc_samples);
     ptr++;
   }
   out.close();

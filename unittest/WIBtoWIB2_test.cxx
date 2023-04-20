@@ -14,7 +14,7 @@
 #include "boost/test/unit_test.hpp"
 
 #include "rawdatautils/WIBtoWIB2.hpp"
-#include "detdataformats/wib/WIBFrame.hpp"
+#include "fddetdataformats/WIBFrame.hpp"
 
 #include <random>
 
@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(WIBtoWIB2_test1)
     adcs.push_back(num);
   }
   
-  detdataformats::wib::WIBFrame fr;
+  fddetdataformats::WIBFrame fr;
   for (int i = 0; i < 256; i++){
     fr.set_channel(i, adcs[i]);
   }
