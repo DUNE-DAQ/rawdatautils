@@ -6,7 +6,7 @@
  * received with this code.
  */
 
-#include "detdataformats/wib2/WIB2Frame.hpp"
+#include "fddetdataformats/WIB2Frame.hpp"
 #include "daqdataformats/Fragment.hpp"
 
 #include <cstdint>
@@ -19,7 +19,7 @@ namespace dunedaq::rawdatautils::wib2 {
  * @brief Gets number of WIB2Frames in a fragment
  */
 uint32_t get_n_frames(daqdataformats::Fragment const& frag){
-  return (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::wib2::WIB2Frame);
+  return (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::WIB2Frame);
 }
 
 /**
@@ -31,7 +31,7 @@ py::array_t<uint16_t> np_array_adc_data(void* data, int nframes){
   py::array_t<uint16_t> ret(256 * nframes);
   auto ptr = static_cast<uint16_t*>(ret.request().ptr);
   for (size_t i=0; i<(size_t)nframes; ++i) {
-    auto fr = reinterpret_cast<detdataformats::wib2::WIB2Frame*>(static_cast<char*>(data) + i * sizeof(detdataformats::wib2::WIB2Frame));
+    auto fr = reinterpret_cast<fddetdataformats::WIB2Frame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::WIB2Frame));
     for (size_t j=0; j<256; ++j)
       ptr[256 * i + j] = fr->get_adc(j);
   }
@@ -49,7 +49,7 @@ py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes){
   py::array_t<uint64_t> ret(nframes);
   auto ptr = static_cast<uint64_t*>(ret.request().ptr);
   for (size_t i=0; i<(size_t)nframes; ++i) {
-    auto fr = reinterpret_cast<detdataformats::wib2::WIB2Frame*>(static_cast<char*>(data) + i * sizeof(detdataformats::wib2::WIB2Frame));
+    auto fr = reinterpret_cast<fddetdataformats::WIB2Frame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::WIB2Frame));
     ptr[i] = fr->get_timestamp();
   }
 

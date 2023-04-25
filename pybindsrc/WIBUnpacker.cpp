@@ -6,7 +6,7 @@
  * received with this code.
  */
 
-#include "detdataformats/wib/WIBFrame.hpp"
+#include "fddetdataformats/WIBFrame.hpp"
 #include "daqdataformats/Fragment.hpp"
 
 #include <cstdint>
@@ -24,7 +24,7 @@ py::array_t<uint16_t> np_array_adc_data(void* data, int nframes){
   py::array_t<uint16_t> ret(256 * nframes);
   auto ptr = static_cast<uint16_t*>(ret.request().ptr);
   for (size_t i=0; i<(size_t)nframes; ++i) {
-    auto fr = reinterpret_cast<detdataformats::wib::WIBFrame*>(static_cast<char*>(data) + i * sizeof(detdataformats::wib::WIBFrame));
+    auto fr = reinterpret_cast<fddetdataformats::WIBFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::WIBFrame));
     for (size_t j=0; j<256; ++j)
       ptr[256 * i + j] = fr->get_channel(j);
   }
@@ -42,7 +42,7 @@ py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes){
   py::array_t<uint64_t> ret(nframes);
   auto ptr = static_cast<uint64_t*>(ret.request().ptr);
   for (size_t i=0; i<(size_t)nframes; ++i) {
-    auto fr = reinterpret_cast<detdataformats::wib::WIBFrame*>(static_cast<char*>(data) + i * sizeof(detdataformats::wib::WIBFrame));
+    auto fr = reinterpret_cast<fddetdataformats::WIBFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::WIBFrame));
     ptr[i] = fr->get_timestamp();
   }
 
@@ -54,7 +54,7 @@ py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes){
  * ADC values and dimension (number of WIBFrames in the Fragment, 256)
  */
 py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag){
-  return np_array_adc_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::wib::WIBFrame));
+  return np_array_adc_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::WIBFrame));
 }
 
 /**
@@ -62,7 +62,7 @@ py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag){
  * array with dimension (number of WIBFrames in the Fragment)
  */
 py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag){
-  return np_array_timestamp_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(detdataformats::wib::WIBFrame));
+  return np_array_timestamp_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::WIBFrame));
 }
 
 

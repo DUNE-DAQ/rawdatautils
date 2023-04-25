@@ -13,15 +13,15 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
-#include "detdataformats/wib/WIBFrame.hpp"
-#include "detdataformats/wibeth/WIBEthFrame.hpp"
+#include "fddetdataformats/WIBFrame.hpp"
+#include "fddetdataformats/WIBEthFrame.hpp"
 
 namespace dunedaq {
 namespace rawdatautils {
 
-detdataformats::wibeth::WIBEthFrame
-wibtowibeth(detdataformats::wib::WIBFrame* fr, uint64_t timestamp=0, int starting_channel=0) {
-  detdataformats::wibeth::WIBEthFrame res;
+fddetdataformats::WIBEthFrame
+wibtowibeth(fddetdataformats::WIBFrame* fr, uint64_t timestamp=0, int starting_channel=0) {
+  fddetdataformats::WIBEthFrame res;
   for (int j = 0; j < 64; ++j) {
     for (int i = 0; i < 64; ++i) {
       res.set_adc(i, j, (fr + j)->get_channel(starting_channel + i));
@@ -46,14 +46,14 @@ wib_binary_to_wibeth_binary(std::string& filename, std::string& output) {
   std::vector<char> v(size);
   file.read(v.data(), size);
   file.close();
-  std::cout << "Number of frames found: "<< size / sizeof(detdataformats::wib::WIBFrame) << '\n';
+  std::cout << "Number of frames found: "<< size / sizeof(fddetdataformats::WIBFrame) << '\n';
 
   std::ofstream out(output.c_str(), std::ios::binary);
   std::vector<int> starting_channel {0, 64, 128, 192};
   for (auto& sc : starting_channel) {
-    auto ptr = reinterpret_cast<detdataformats::wib::WIBFrame*>(v.data());
+    auto ptr = reinterpret_cast<fddetdataformats::WIBFrame*>(v.data());
     uint64_t timestamp = ptr->get_timestamp();
-    int num_frames = size / sizeof(detdataformats::wib::WIBFrame);
+    int num_frames = size / sizeof(fddetdataformats::WIBFrame);
     while(num_frames >= 64){
       auto wibethfr = wibtowibeth(ptr, timestamp, sc);
       timestamp += 32 * 64;
