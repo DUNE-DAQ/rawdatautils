@@ -9,6 +9,7 @@
 #include "detdataformats/wib/WIBFrame.hpp"
 #include "detdataformats/wib2/WIB2Frame.hpp"
 #include "detdataformats/daphne/DAPHNEFrame.hpp"
+#include "detdataformats/toad/TOADFrameOverlay.hpp"
 #include "daqdataformats/Fragment.hpp"
 
 #include <pybind11/numpy.h>
@@ -42,6 +43,11 @@ namespace daphne {
   extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
 }
 
+namespace toad {
+  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag, int nsamples);
+  extern py::array_t<uint16_t> np_array_adc_data(void* data, int nsamples);
+}
+
 namespace unpack {
 namespace python {
 
@@ -67,7 +73,9 @@ register_unpack(py::module& m)
   daphne_module.def("np_array_adc_data", &daphne::np_array_adc_data);
   daphne_module.def("np_array_timestamp_data", &daphne::np_array_timestamp_data);
 
-  
+  py::module_ toad_module = m.def_submodule("toad");
+  toad_module.def("np_array_adc", &toad::np_array_adc);
+  toad_module.def("np_array_adc_data", &toad::np_array_adc_data);
 }
 
 } // namespace python
