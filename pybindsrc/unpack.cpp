@@ -44,7 +44,7 @@ namespace daphne {
 }
 
 namespace toad {
-  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag, int nsamples);
+  extern py::array_t<uint16_t> np_array_adc(void* data, int nsamples, int index);
   extern py::array_t<uint16_t> np_array_adc_data(void* data, int nsamples);
 }
 

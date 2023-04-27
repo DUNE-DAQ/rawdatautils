@@ -24,7 +24,7 @@ py::array_t<uint16_t> np_array_adc_data(void* data, int nsamples){
   py::array_t<uint16_t> ret(nsamples);
   auto ptr = static_cast<uint16_t*>(ret.request().ptr);
   auto fr = reinterpret_cast<detdataformats::toad::TOADFrameOverlay*>(static_cast<char*>(data));
-    for (size_t j=0; j<nsamples; ++j){
+    for (size_t j=0; j<nsamples; j++){
       ptr[j] = fr->get_samples(j);
     }
   return ret;
@@ -34,8 +34,8 @@ py::array_t<uint16_t> np_array_adc_data(void* data, int nsamples){
  *  * @brief Unpacks a Fragment containing WIB2Frames into a numpy array with the
  *   * ADC values and dimension (number of WIB2Frames in the Fragment, 256)
  *    */
-py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag, int nsamples){
-  return np_array_adc_data(frag.get_data(), nsamples);
+py::array_t<uint16_t> np_array_adc(void* data, int nsamples, int index){
+  return np_array_adc_data(data, nsamples);
 }
 
 } // namespace dunedaq::rawdatautils::wib2 // NOLINT

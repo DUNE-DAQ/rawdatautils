@@ -7,10 +7,12 @@ import detdataformats
 from rawdatautils.unpack.toad import *
 from rawdatautils.utilities.toad import *
 
+import sys
 import click
 import time
 import numpy as np
 
+@click.command()
 @click.argument('filename', type=click.Path(exists=True))
 @click.option('--nrecords', '-n', default=-1, help='How many Trigger Records to process (default: all)')
 @click.option('--nskip', default=0, help='How many Trigger Records to skip (default: 0)')
@@ -32,7 +34,7 @@ def main(filename, nrecords, nskip, print_headers, print_adc_stats):
         else:
             nrecords=nskip+nrecords
 
-    records_to_process = []
+    records_to_process = [1]
     if nrecords==-1:
         records_to_process = records[nskip:]
     else:
@@ -53,7 +55,7 @@ def main(filename, nrecords, nskip, print_headers, print_adc_stats):
             frag_ts = frag.get_trigger_timestamp()
 
             print(f'\tTrigger timestamp for fragment is {frag_ts}')
-            
+            print(frag.get_size()) 
             frag_size = frag.get_size() - 72
             i = 0
             while i < frag_size:
@@ -67,16 +69,18 @@ def main(filename, nrecords, nskip, print_headers, print_adc_stats):
                 print(f'{prefix} Header Parity Check: {toad_f.hdr_par_check}')
                 print(f'{prefix} Number of samples: {toad_f.n_samples}')
                 print(f'{prefix} Number of bytes: {toad_f.n_bytes}')
-
+                addresses = toad_f.get_first_sample()
+                time.sleep(2)
                 if print_adc_stats:
 
-                    #unpack adcs into a n_frames x 256 numpy array of uint16
-                    adcs = np_array_adc(frag, toad_f.n_samples)
+                    #unpack adcs into a numpy array of uint16
+                    adcs = np_array_adc_data(frag.get_data(i), (toad_f.n_samples))
                     adcs_rms = np.std(adcs,axis=0)
                     adcs_ped = np.mean(adcs,axis=0)
+                    print(adcs)
                 
                 print('\n\t====TOAD DATA====')
-
+                i+=toad_f.n_bytes
             print("\n")
         #end gid loop       
 
