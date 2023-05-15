@@ -1,7 +1,7 @@
 from hdf5libs import HDF5RawDataFile
 import daqdataformats
 from rawdatautils.unpack.wib import *
-import detdataformats.wib
+import fddetdataformats
 import click
 import time
 import numpy as np
@@ -28,9 +28,9 @@ def main(filename, tr_count):
             frag = h5_file.get_frag(r,gid)
             frag_hdr = frag.get_header()
 
-            n_frames = (frag.get_size()-frag_hdr.sizeof())//detdataformats.wib.WIBFrame.sizeof()
+            n_frames = (frag.get_size()-frag_hdr.sizeof())//fddetdataformats.WIBFrame.sizeof()
 
-            wf = detdataformats.wib.WIBFrame(frag.get_data())
+            wf = fddetdataformats.WIBFrame(frag.get_data())
             wh = wf.get_wib_header()
 
             ts = np.zeros(n_frames,dtype='uint64')
@@ -38,7 +38,7 @@ def main(filename, tr_count):
 
             t0 = time.time()
             for iframe in range(n_frames):
-                wf = detdataformats.wib.WIBFrame(frag.get_data(iframe*detdataformats.wib.WIBFrame.sizeof()))
+                wf = fddetdataformats.WIBFrame(frag.get_data(iframe*fddetdataformats.WIBFrame.sizeof()))
                 ts[iframe] = wf.get_timestamp()
                 adcs[iframe] = [ wf.get_channel(k) for k in range(256) ]
             print(f'Time to decode with the python for loop       {time.time() - t0:.3f} s')

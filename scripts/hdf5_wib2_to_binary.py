@@ -11,7 +11,7 @@ import argparse
 
 from hdf5libs import HDF5RawDataFile
 import daqdataformats
-import detdataformats
+import fddetdataformats
 
 from rich import print
 
@@ -53,14 +53,14 @@ def main(args):
             Debug(f"loading fragment: {fragments[args.link]}")
             f = h5file.get_frag(fragments[args.link])
             
-            WIB2Frame_size = detdataformats.wib2.WIB2Frame.sizeof()
+            WIB2Frame_size = fddetdataformats.WIB2Frame.sizeof()
 
             n_frames = (f.get_size() - f.get_header().sizeof()) // WIB2Frame_size # calculate the number of wib frames per fragment
             for j in range(n_frames):
                 Debug(f.get_fragment_type())
                 Debug(f.get_element_id())
 
-                data = detdataformats.wib2.WIB2Frame(f.get_data(j * WIB2Frame_size)) # unpack fragment to WIB2Frame
+                data = fddetdataformats.WIB2Frame(f.get_data(j * WIB2Frame_size)) # unpack fragment to WIB2Frame
                 
                 Debug(f"{data.sizeof()=}")
                 
