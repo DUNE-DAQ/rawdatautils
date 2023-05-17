@@ -4,6 +4,7 @@ from hdf5libs import HDF5RawDataFile
 
 import daqdataformats
 import detdataformats
+import fddetdataformats
 from rawdatautils.unpack.wib2 import *
 from rawdatautils.utilities.wib2 import *
 import detchannelmaps
@@ -72,7 +73,7 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
             n_frames = get_n_frames(frag);
             print(f'\tFound {n_frames} WIB2 Frames.')
 
-            wf = detdataformats.WIB2Frame(frag.get_data())
+            wf = fddetdataformats.WIB2Frame(frag.get_data())
 
             #print header info
             if print_headers:
@@ -119,7 +120,7 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
         #end gid loop
 
         if check_timestamps:
-            timestamps_frame0 = np.array([ detdataformats.WIB2Frame(h5_file.get_frag(r,gid).get_data()).get_timestamp() for gid in wib_geo_ids ])
+            timestamps_frame0 = np.array([ fddetdataformats.WIB2Frame(h5_file.get_frag(r,gid).get_data()).get_timestamp() for gid in wib_geo_ids ])
             timestamps_frame0_diff = timestamps_frame0 - timestamps_frame0[0]
             
             print('\n\t==== TIMESTAMP ACROSS WIBS CHECK ====')
