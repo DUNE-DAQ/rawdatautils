@@ -60,10 +60,17 @@ namespace wibeth {
 
 
 namespace daphne {
+  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
   extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
   extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
   extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
   extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
+
+  extern uint32_t get_n_frames_stream(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc_stream(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_adc_stream_data(void* data, int nframes);
+  extern py::array_t<uint64_t> np_array_timestamp_stream(daqdataformats::Fragment& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_stream_data(void* data, int nframes);
 }
 
 
@@ -104,10 +111,16 @@ register_unpack(py::module& m) {
   wibeth_module.def("np_array_timestamp_data", &wibeth::np_array_timestamp_data);
 
   py::module_ daphne_module = m.def_submodule("daphne");
+  daphne_module.def("get_n_frames", &daphne::get_n_frames);
   daphne_module.def("np_array_adc", &daphne::np_array_adc);
   daphne_module.def("np_array_timestamp", &daphne::np_array_timestamp);
   daphne_module.def("np_array_adc_data", &daphne::np_array_adc_data);
   daphne_module.def("np_array_timestamp_data", &daphne::np_array_timestamp_data);
+  daphne_module.def("get_n_frames_stream", &daphne::get_n_frames_stream);
+  daphne_module.def("np_array_adc_stream", &daphne::np_array_adc_stream);
+  daphne_module.def("np_array_timestamp_stream", &daphne::np_array_timestamp_stream);
+  daphne_module.def("np_array_adc_stream_data", &daphne::np_array_adc_stream_data);
+  daphne_module.def("np_array_timestamp_stream_data", &daphne::np_array_timestamp_stream_data);
 
   py::module_ tde_module = m.def_submodule("tde");
   tde_module.def("get_n_frames", &tde::get_n_frames);
