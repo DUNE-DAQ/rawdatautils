@@ -1,5 +1,5 @@
 import daqdataformats
-import detdataformats.wib2
+import detdataformats
 
 def print_header(wib_frame,prefix="\t"):
     header = wib_frame.get_header()

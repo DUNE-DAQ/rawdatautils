@@ -2,7 +2,7 @@ from hdf5libs import HDF5RawDataFile
 
 import daqdataformats
 from rawdatautils.unpack.wib import *
-import detdataformats.wib
+import fddetdataformats
 import detchannelmaps
 
 import click
@@ -39,13 +39,13 @@ def main(filename, tr_count, channel_map):
 
             print(f'\tTrigger timestamp for fragment is {frag_ts}')
 
-            n_frames = (frag.get_size()-frag_hdr.sizeof())//detdataformats.wib.WIBFrame.sizeof()
+            n_frames = (frag.get_size()-frag_hdr.sizeof())//fddetdataformats.WIBFrame.sizeof()
 
             if(offline_ch_num_dict.get(gid) is None):
                 if channel_map is None:
                     offline_ch_num_dict[gid] = range(256)
                 else:
-                    wf = detdataformats.wib.WIBFrame(frag.get_data())
+                    wf = fddetdataformats.WIBFrame(frag.get_data())
                     wh = wf.get_wib_header()
                     offline_ch_num_dict[gid] = [ch_map.get_offline_channel_from_crate_slot_fiber_chan(wh.crate_no, wh.slot_no, wh.fiber_no, c) for c in range(256)]
 
