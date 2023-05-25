@@ -38,7 +38,7 @@ uint32_t get_n_frames_stream(daqdataformats::Fragment const& frag){
  */
 py::array_t<uint16_t> np_array_adc_data(void* data, int nframes){
 
-  const auto channels_per_daphne = detdataformats::daphne::DAPHNEFrame::s_t_channels_per_daphne;
+  const auto channels_per_daphne = 1; //detdataformats::daphne::DAPHNEFrame::s_t_channels_per_daphne;
   
   py::array_t<uint16_t> ret(channels_per_daphne * nframes);
   auto ptr = static_cast<uint16_t*>(ret.request().ptr);
