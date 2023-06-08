@@ -29,10 +29,11 @@ wibtotde(fddetdataformats::WIBFrame* fr, uint64_t timestamp, uint16_t ch) {
   }
 
   auto header = fr->get_wib_header();
-  res.get_tde_header()->version = header->version;
-  res.get_tde_header()->det_id = 11;
-  res.get_tde_header()->crate = header->crate_no;
-  res.get_tde_header()->slot = header->slot_no;
+  res.get_daq_header()->version = header->version;
+  res.get_daq_header()->det_id = 11;
+  res.get_daq_header()->crate_id = header->crate_no;
+  res.get_daq_header()->slot_id = header->slot_no;
+  res.get_daq_header()->stream_id = header->fiber_no;
   res.set_channel(ch);
   res.set_timestamp(timestamp);
   std::cout << " Generated frame with TS " << timestamp << " for channel " << ch << std::endl;
