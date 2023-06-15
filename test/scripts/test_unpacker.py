@@ -15,19 +15,23 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.argument('rawfile', type=click.Path(exists=True))
 @click.option('-i', '--interactive', is_flag=True, default=False)
-@click.option('-p', '--plot', type=str, default=False)
-def main(rawfile, interactive, plot):
+@click.option('-p', '--plot', type=str, default=None)
+@click.option('-o', '--tr-offset', type=int, default=0)
+@click.option('-n', '--num-trs', type=int, default=1)
+def main(rawfile, interactive, plot, tr_offset, num_trs):
 
 
-    # wf_up = rdu.WIBFragmentUnpacker('VDColdbox')
+    wf_up = rdu.WIBFragmentUnpacker('PD2HD')
     wethf_up = rdu.WIBEthFragmentUnpacker(None)
+    daphne_up = rdu.DAPHNEStreamFragmentUnpacker()
     # tp_up = rdu.TPFragmentUnpacker('VDColdbox')
 
-    u = rdu.Unpacker()
+    up = rdu.UnpackerService()
 
-    u.add_unpacker('bde_eth', wethf_up)
-    # u.add_unpacker('bde', wf_up)
-    # u.add_unpacker('tp', tp_up)
+    up.add_unpacker('bde_eth', wethf_up)
+    up.add_unpacker('bde', wf_up)
+    # up.add_unpacker('tp', tp_up)
+    up.add_unpacker('pds', daphne_up)
 
 
     print(f"Opening {rawfile}")
@@ -36,12 +40,14 @@ def main(rawfile, interactive, plot):
         
     trs = [ i for i,_ in rdf.get_all_trigger_record_ids()]
     # process only the first TR
-    trs = trs[:1]
+    trs = trs[tr_offset:tr_offset+num_trs]
 
+    df_tp = None
+    df_tpc = None
     for tr in trs:
-        print(f"Reading Trigger Record {tr}")
+        print(f"--- Reading Trigger Record {tr} ---")
 
-        unpacked_tr = u.unpack(rdf, tr)
+        unpacked_tr = up.unpack(rdf, tr)
 
         if 'tp' in unpacked_tr:
             print("Assembling TPs")
@@ -65,8 +71,22 @@ def main(rawfile, interactive, plot):
             
             print(f"TPC adcs dataframe assembled {len(df_tpc)}")
 
+        if 'bde' in unpacked_tr:
+            print("Assembling WIB Frames")
+            dfs = {k:v for k,v in unpacked_tr['bde'].items() if not v is None}
 
-    if plot:
+            idx = pd.Index([], dtype='uint64')
+            for df in dfs.values():
+                idx = idx.union(df.index)
+
+            df_tpc = pd.DataFrame(index=idx, dtype='uint16')
+            for df in dfs.values():
+                df_tpc = df_tpc.join(df)
+            df_tpc = df_tpc.reindex(sorted(df_tpc.columns), axis=1)
+            
+            print(f"TPC adcs dataframe assembled {len(df_tpc)}x{len(df_tpc.columns)}")
+
+    if plot and not df_tpc.empty:
         import matplotlib.pyplot as plt
 
         print("Plotting the first 128 samples")
