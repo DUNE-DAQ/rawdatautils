@@ -36,7 +36,7 @@ wibtotde(fddetdataformats::WIBFrame* fr, uint64_t timestamp, uint16_t ch) {
   res.get_daq_header()->stream_id = header->fiber_no;
   res.set_channel(ch);
   res.set_timestamp(timestamp);
-  std::cout << " Generated frame with TS " << timestamp << " for channel " << ch << std::endl;
+  std::cout << " Generated frame with TS " << res.get_timestamp() << " for channel " << res.get_channel() << std::endl;
   return res;
 }
 
