@@ -44,8 +44,9 @@ py::array_t<uint16_t> np_array_adc_data(void* data, int nframes){
   auto ptr = static_cast<uint16_t*>(ret.request().ptr);
   for (size_t i=0; i<(size_t)nframes; ++i) {
     auto fr = reinterpret_cast<fddetdataformats::DAPHNEFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEFrame));
+    //auto fr = reinterpret_cast<fddetdataformats::DAPHNEFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEFrame));
     for (size_t j=0; j<adcs_per_channel; ++j) {
-      ptr[i + j] = fr->get_adc(j);
+      ptr[i*adcs_per_channel + j] = fr->get_adc(j);
     }
     //for (size_t j=0; j<channels_per_daphne; ++j)
     
