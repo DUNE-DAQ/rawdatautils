@@ -31,6 +31,63 @@ uint32_t get_n_frames_stream(daqdataformats::Fragment const& frag){
 }
 
 
+/**                                                                                                                                                                                                                
+ * @brief Unpacks channel numbers for DAPHNEStreamFrames into a numpy array with dimensions
+ * (nframes, s_channels_per_frame)                                                                                                                                                                                                                                  
+ */
+
+py::array_t<uint8_t> np_array_channels_stream_data(void* data, int nframes){
+
+  const auto channels_per_daphne  = fddetdataformats::DAPHNEStreamFrame::s_channels_per_frame;
+  py::array_t<uint8_t> channels(channels_per_daphne * nframes);
+  auto ptr = static_cast<uint8_t*>(channels.request().ptr);
+
+  for (size_t i=0; i<(size_t)nframes; ++i) {
+    auto fr = reinterpret_cast<fddetdataformats::DAPHNEStreamFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEStreamFrame));
+
+    ptr[i*channels_per_daphne + 0] = fr->get_channel0();
+    ptr[i*channels_per_daphne + 1] = fr->get_channel1();
+    ptr[i*channels_per_daphne + 2] = fr->get_channel2();
+    ptr[i*channels_per_daphne + 3] = fr->get_channel3();
+
+  }   
+  channels.resize({nframes, channels_per_daphne});
+
+  return channels; 
+}
+
+/**                                                                                                                                                                                                                
+ * @brief Unpacks channel numbers for DAPHNEFrames into a numpy array with dimensions
+ * (nframes)                                                                                                                                                                                                                                  
+ */
+py::array_t<uint8_t> np_array_channels_data(void* data, int nframes){
+
+  py::array_t<uint8_t> channels(nframes);
+  auto ptr = static_cast<uint8_t*>(channels.request().ptr);
+
+  for (size_t i=0; i<(size_t)nframes; ++i) {
+    auto fr = reinterpret_cast<fddetdataformats::DAPHNEFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEFrame));
+    ptr[i] = fr->get_channel();
+  }
+
+  return channels;
+}
+
+/**                                                                                                                                                                                                                
+ * @brief Unpacks channel numbers for Fragment that contains DAPHNEFrames into a numpy array with dimensions                                                                                                                                                                                                                                
+ */
+py::array_t<uint8_t> np_array_channels(daqdataformats::Fragment& frag){
+  return np_array_channels_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::DAPHNEFrame));
+}
+
+/**                                                                                                                                                                                                                
+ * @brief Unpacks channel numbers for Fragment that contains DAPHNEStreamFrames into a numpy array with dimensions                                                                                                                                                                                                                                 
+ */
+py::array_t<uint8_t> np_array_channels_stream(daqdataformats::Fragment& frag){
+  return np_array_channels_stream_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::DAPHNEStreamFrame));
+}
+
+
 /**
  * @brief Unpacks data containing DAPHNEFrames into a numpy array with the ADC
  * values and dimension (number of DAPHNEFrames, channels_per_daphne)
@@ -51,7 +108,7 @@ py::array_t<uint16_t> np_array_adc_data(void* data, int nframes){
     //for (size_t j=0; j<channels_per_daphne; ++j)
     
   }
-  //ret.resize({nframes, channels_per_daphne});
+  ret.resize({nframes, adcs_per_channel});
 
   return ret;
 }
@@ -66,6 +123,7 @@ py::array_t<uint16_t> np_array_adc_stream_data(void* data, int nframes){
   const auto channels_per_daphne  = fddetdataformats::DAPHNEStreamFrame::s_channels_per_frame;
   const auto adcs_per_channel     = fddetdataformats::DAPHNEStreamFrame::s_adcs_per_channel;
 
+  
   py::array_t<uint16_t> ret(channels_per_daphne * nframes * adcs_per_channel);
   auto ptr = static_cast<uint16_t*>(ret.request().ptr);
   for (size_t i=0; i<(size_t)nframes; ++i) {
@@ -79,7 +137,6 @@ py::array_t<uint16_t> np_array_adc_stream_data(void* data, int nframes){
   return ret;
 }
 
-
 /**
  * @brief Unpacks data containing DAPHNEFrames into a numpy array with the
  * timestamps with dimension (number of DAPHNEFrames)
@@ -87,8 +144,6 @@ py::array_t<uint16_t> np_array_adc_stream_data(void* data, int nframes){
  */
 
 py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes){
-
-  const auto adcs_per_channel     = fddetdataformats::DAPHNEFrame::s_num_adcs;
 
   py::array_t<uint64_t> ret(nframes);
   auto ptr = static_cast<uint64_t*>(ret.request().ptr);
