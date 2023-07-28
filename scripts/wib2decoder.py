@@ -66,7 +66,11 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
 
             frag = h5_file.get_frag(r,gid)
             frag_hdr = frag.get_header()
+            frag_type = frag.get_fragment_type()
             frag_ts = frag.get_trigger_timestamp()
+            if(frag_type!=daqdataformats.FragmentType.kWIB):
+                print('\tNot WIB fragment type {frag_type}. Continue.')
+                continue
 
             print(f'\tTrigger timestamp for fragment is {frag_ts}')
 
