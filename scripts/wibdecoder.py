@@ -8,6 +8,7 @@ import fddetdataformats
 import rawdatautils.unpack.wibeth as wibeth_unpack
 import rawdatautils.unpack.wib2 as wib2_unpack
 import rawdatautils.utilities.wib2 as wib2_utils
+import rawdatautils.utilities.wibeth as wibeth_utils
 import detchannelmaps
 
 import click
@@ -80,14 +81,17 @@ def main(filenames, nrecords, nskip, channel_map, print_headers, print_adc_stats
                 frag_ts = frag.get_trigger_timestamp()
 
                 unpacker = None
+                utils = None
                 FrameType = None
                 if(frag_type==daqdataformats.FragmentType.kWIB):
                     frag_type_name="WIB"
                     unpacker = wib2_unpack
+                    utils = wib2_utils
                     FrameType = fddetdataformats.WIB2Frame
                 elif(frag_type==daqdataformats.FragmentType.kWIBEth):
                     frag_type_name="WIBEth"
                     unpacker = wibeth_unpack
+                    utils = wibeth_utils
                     FrameType = fddetdataformats.WIBEthFrame
 
                 if not quiet:
@@ -107,7 +111,7 @@ def main(filenames, nrecords, nskip, channel_map, print_headers, print_adc_stats
                 #print header info
                 if print_headers:
                     print('\n\t==== WIB HEADER (First Frame) ====')
-                    print_header(wf,prefix='\t\t')
+                    utils.print_header(wf,"\t\t")
 
                 #fill channel map info if needed
                 if(offline_ch_num_dict.get(gid) is None):
