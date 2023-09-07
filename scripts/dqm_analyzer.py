@@ -12,7 +12,7 @@ import click
 @click.command()
 @click.argument('filenames', nargs=-1, type=click.Path(exists=True))
 @click.option('--nrecords', '-n', default=1, help='How many Trigger Records to process (default: 1)')
-@click.option('--nworkers', default=10, help'How many thread workers to launch (default: 10)')
+@click.option('--nworkers', default=10, help='How many thread workers to launch (default: 10)')
 @click.option('--wibpulser', is_flag=True, help='WIBs in pulser mode')
 @click.option('--make-plots',is_flag=True, help='Option to make plots')
 

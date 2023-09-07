@@ -319,8 +319,8 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
         dict_deth["n_channels"] = self.N_CHANNELS_PER_FRAME
 
         ts_diff_vals, ts_diff_counts = np.unique(np.diff(self.unpacker.np_array_timestamp(frag)),return_counts=True)
-        dict_deth["ts_diffs_vals"] = [ ts_diff_vals ]
-        dict_deth["ts_diffs_counts"] = [ ts_diff_counts ]
+        dict_deth["ts_diffs_vals"] = ts_diff_vals
+        dict_deth["ts_diffs_counts"] = ts_diff_counts
 
         dict_deth["sampling_period"] = self.SAMPLING_PERIOD
 

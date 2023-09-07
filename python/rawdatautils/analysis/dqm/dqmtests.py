@@ -97,16 +97,17 @@ class CheckRMS_HD_TPC(DQMTest):
         
 
     def run_test(self,df_dict):
-        df_tmp = df_dict["det_data_kHD_TPC_kWIBEth"].reset_index()[["channel","rms","plane"]].merge(self.df_threshold,on=["plane"])
-        df_tmp = df_tmp.loc[self.operator(df_tmp["rms"],df_tmp["threshold"])]      
-        n_rms_bad = len(df_tmp)
+        df_tmp = df_dict["det_data_kHD_TPC_kWIBEth"].join(df_dict["daqh"]).reset_index().merge(self.df_threshold,on=["plane"])
+        df_tmp = df_tmp[["channel","rms","crate_id","plane","threshold"]].groupby(by="channel").mean().reset_index()
+        df_tmp = df_tmp.loc[self.operator(df_tmp["rms"],df_tmp["threshold"])]
+        n_rms_bad = len(np.unique(df_tmp["channel"]))
         if n_rms_bad==0:
             return DQMTestResult(DQMResultEnum.OK,f'OK')
         else:
             if self.verbose:
                 print("CHANNELS FAILING RMS CHECK")
-                print(tabulate(df_tmp.reset_index()[["channel","rms","plane","threshold"]],
-                               headers=["Channel","RMS","Plane","Threshold"],
+                print(tabulate(df_tmp.reset_index()[["channel","rms","crate_id","plane","threshold"]],
+                               headers=["Channel","RMS","APA","Plane","Threshold"],
                                showindex=False,tablefmt='pretty'))
             return DQMTestResult(DQMResultEnum.BAD,
-                                 f'{n_rms_bad}  channels have RMS outside of range.')
+                                 f'{n_rms_bad} channels have RMS outside of range.')
