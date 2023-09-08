@@ -333,6 +333,7 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
         _, crate, slot, stream = self.get_det_crate_slot_stream(frag)
         dict_detd["channel"] = [ self.channel_map.get_offline_channel_from_crate_slot_stream_chan(crate, slot, stream, c) for c in range(self.N_CHANNELS_PER_FRAME) ]
         dict_detd["plane"] = [ self.channel_map.get_plane_from_offline_channel(uc) for uc in dict_detd["channel"] ]
+        dict_detd["apa"] = [ self.channel_map.get_apa_from_offline_channel(uc) for uc in dict_detd["channel"] ]
         
         adcs = self.unpacker.np_array_adc(frag)
         dict_detd["mean"] = np.mean(adcs,axis=0)
@@ -493,6 +494,8 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
 def GetUnpacker(frag_type,det_id,dict_idx):
     if(frag_type==daqdataformats.FragmentType.kWIBEth and det_id==detdataformats.DetID.Subdetector.kHD_TPC.value):
         return WIBEthUnpacker(dict_idx,"PD2HDChannelMap")
+    elif(frag_type==daqdataformats.FragmentType.kWIBEth and det_id==detdataformats.DetID.Subdetector.kVD_BottomTPC.value):
+        return WIBEthUnpacker(dict_idx,"PD2VDBottomTPCChannelMap")
     elif(frag_type==daqdataformats.FragmentType.kDAPHNEStream):
         return DAPHNEStreamUnpacker(dict_idx)
     elif(frag_type==daqdataformats.FragmentType.kDAPHNE):

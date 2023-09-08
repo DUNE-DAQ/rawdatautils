@@ -13,21 +13,37 @@ import click
 @click.argument('filenames', nargs=-1, type=click.Path(exists=True))
 @click.option('--nrecords', '-n', default=1, help='How many Trigger Records to process (default: 1)')
 @click.option('--nworkers', default=10, help='How many thread workers to launch (default: 10)')
+@click.option('--hd/--vd', default=True, help='Whether we are running HD (or VD) (default: "HD")')
 @click.option('--wibpulser', is_flag=True, help='WIBs in pulser mode')
 @click.option('--make-plots',is_flag=True, help='Option to make plots')
 
-def main(filenames, nrecords, nworkers, wibpulser, make_plots):
+def main(filenames, nrecords, nworkers, hd, wibpulser, make_plots):
 
     #setup our tests
     dqm_test_suite = DQMTestSuite()
 
     dqm_test_suite.register_test(CheckAllExpectedFragmentsTest())
-    dqm_test_suite.register_test(CheckTimestampDiffs_HD_TPC())
-    dqm_test_suite.register_test(CheckTimestampsAligned(3),"CheckTimestampsAligned_HD_TPC")
-    dqm_test_suite.register_test(CheckNFramesWIBEth())
-    
-    if(not wibpulser): dqm_test_suite.register_test(CheckRMS_HD_TPC(threshold=100.,verbose=True),name="CheckRMS_HD_TPC_High")
-    if(not wibpulser): dqm_test_suite.register_test(CheckRMS_HD_TPC(threshold=[20.,15.],operator=operator.lt,verbose=True),name="CheckRMS_HD_TPC_Low")
+    dqm_test_suite.register_test(CheckNFrames_WIBEth())
+    if(hd):
+        dqm_test_suite.register_test(CheckTimestampDiffs_WIBEth("HD_TPC"))
+        dqm_test_suite.register_test(CheckTimestampsAligned(3),"CheckTimestampsAligned_HD_TPC")
+        if(not wibpulser):
+            dqm_test_suite.register_test(CheckRMS_WIBEth(det_name="HD_TPC",threshold=100.,verbose=True),
+                                         name="CheckRMS_HD_TPC_High")
+            dqm_test_suite.register_test(CheckRMS_WIBEth(det_name="HD_TPC",threshold=[20.,15.],operator=operator.lt,verbose=True),
+                                         name="CheckRMS_HD_TPC_Low")
+            dqm_test_suite.register_test(CheckPedestal_WIBEth(det_name="HD_TPC",verbose=True),
+                                         name="CheckPedestal_HD_TPC")
+    else:
+        dqm_test_suite.register_test(CheckTimestampDiffs_WIBEth("VD_BottomTPC"))
+        dqm_test_suite.register_test(CheckTimestampsAligned(10),"CheckTimestampsAligned_VD_BottomTPC")
+        if(not wibpulser):
+            dqm_test_suite.register_test(CheckRMS_WIBEth(det_name="VD_BottomTPC",threshold=100.,verbose=True),
+                                         name="CheckRMS_HD_TPC_High")
+            dqm_test_suite.register_test(CheckRMS_WIBEth(det_name="VD_BottomTPC",threshold=[12.,20.],operator=operator.lt,verbose=True),
+                                         name="CheckRMS_HD_TPC_Low")
+            dqm_test_suite.register_test(CheckPedestal_WIBEth(det_name="VD_BottomTPC",verbose=True),
+                                         name="CheckPedestal_VD_BottomTPC")
 
     df_dict = {}
     n_processed_records = 0
@@ -54,13 +70,20 @@ def main(filenames, nrecords, nworkers, wibpulser, make_plots):
     print(dqm_test_suite.get_table())
 
     if(make_plots):
-        if(not wibpulser):
-            plot_HD_TPC_by_channel(df_dict,var="rms",jpeg_base="pdune2_hd_tpc_rms")
-            plot_HD_TPC_by_channel(df_dict,var="rms",yrange=[-1,60],jpeg_base="pdune2_hd_tpc_rms_fixrange")
-            plot_HD_TPC_by_channel(df_dict,var="mean",jpeg_base="pdune2_hd_tpc_mean")
-
-        if(wibpulser):
-            plot_HD_TPC_pulser_by_channel(df_dict,jpeg_base='pdune2_hd_tpc_pulser')
+        if(hd):
+            if(not wibpulser):
+                plot_WIBEth_by_channel(df_dict,var="rms",det_name="HD_TPC",jpeg_base="pdune2_hd_tpc_rms")
+                plot_WIBEth_by_channel(df_dict,var="rms",det_name="HD_TPC",yrange=[-1,60],jpeg_base="pdune2_hd_tpc_rms_fixrange")
+                plot_WIBEth_by_channel(df_dict,var="mean",det_name="HD_TPC",jpeg_base="pdune2_hd_tpc_mean")
+            if(wibpulser):
+                plot_WIBEth_pulser_by_channel(df_dict,det_name="HD_TPC",jpeg_base='pdune2_hd_tpc_pulser')
+        else:
+            if(not wibpulser):
+                plot_WIBEth_by_channel(df_dict,var="rms",det_name="VD_BottomTPC",jpeg_base="pdune2_vd_tpc_rms")
+                plot_WIBEth_by_channel(df_dict,var="rms",det_name="VD_BottomTPC",yrange=[-1,60],jpeg_base="pdune2_vd_tpc_rms_fixrange")
+                plot_WIBEth_by_channel(df_dict,var="mean",det_name="VD_BottomTPC",jpeg_base="pdune2_vd_tpc_mean")
+            if(wibpulser):
+                plot_WIBEth_pulser_by_channel(df_dict,det_name="VD_BottomTPC",jpeg_base='pdune2_vd_tpc_pulser')
 
 if __name__ == '__main__':
     main()

@@ -17,14 +17,19 @@ class CheckAllExpectedFragmentsTest(DQMTest):
         else:
             return DQMTestResult(DQMResultEnum.BAD,f'{n_not_matched} / {len(df_tmp)} records missing fragments.')
 
-class CheckTimestampDiffs_HD_TPC(DQMTest):
-
-    def __init__(self):
+class CheckTimestampDiffs_WIBEth(DQMTest):
+    
+    def __init__(self,det_name):
         super().__init__()
-        self.name = 'CheckTimestampDiffs_HD_TPC'
-
+        self.name = f'CheckTimestampDiffs_WIBEth_{det_name}'
+        self.det_head_key=f'det_head_k{det_name}_kWIBEth'
+        
     def run_test(self,df_dict):
-        df_tmp = df_dict["det_head_kHD_TPC_kWIBEth"]
+
+        if self.det_head_key not in df_dict.keys():
+            return DQMTestResult(DQMResultEnum.WARNING,f'Could not find {self.det_head_key} in DataFrame dict.')
+        
+        df_tmp = df_dict[self.det_head_key]
         df_tmp["ts_diff_wrong"] = df_tmp.apply(lambda x: (x.ts_diffs_vals!=x.sampling_period).sum(), axis=1)
         n_ts_diff_wrong = df_tmp["ts_diff_wrong"].sum()
         if n_ts_diff_wrong==0:
@@ -47,20 +52,20 @@ class CheckTimestampsAligned(DQMTest):
     def run_test(self,df_dict):
         df_tmp = df_dict["daqh"].loc[df_dict["daqh"]["det_id"]==self.det_id]
         if len(df_tmp)==0:
-            return DQMTestResult(DQMResultEnum.WARNING,f'WARNING: No components found with detector id {det_id}.')
+            return DQMTestResult(DQMResultEnum.WARNING,f'WARNING: No components found with detector id {self.det_id}.')
         df_tmp = df_tmp.groupby(by=["run_idx","record_idx","sequence_idx"])
         n_different = df_tmp["timestamp_first"].agg(CheckTimestampsAligned.any_different).sum()
         if n_different==0:
             return DQMTestResult(DQMResultEnum.OK,f'OK')
         else:
             return DQMTestResult(DQMResultEnum.BAD,
-                                 f'{n_different} / {len(df_tmp)} records have timestamp misalignment for det_id {det_id}.')
+                                 f'{n_different} / {len(df_tmp)} records have timestamp misalignment for det_id {self.det_id}.')
 
-class CheckNFramesWIBEth(DQMTest):
+class CheckNFrames_WIBEth(DQMTest):
 
     def __init__(self):
         super().__init__()
-        self.name = "CheckNFramesWIBEth"
+        self.name = "CheckNFrames_WIBEth"
 
     def run_test(self,df_dict):
         df_tmp = df_dict["frh"].loc[df_dict["frh"]["fragment_type"]==12][["window_begin","window_end"]]
@@ -76,11 +81,13 @@ class CheckNFramesWIBEth(DQMTest):
                                  f'{n_frames_wrong} / {len(df_tmp)} WIBEth fragments have the wrong number of frames.')
 
 
-class CheckRMS_HD_TPC(DQMTest):
+class CheckRMS_WIBEth(DQMTest):
 
-    def __init__(self,threshold=100,operator=operator.gt,verbose=False):
+    def __init__(self,det_name,threshold=100,operator=operator.gt,verbose=False):
         super().__init__()
-        self.name = 'CheckRMS_HD_TPC'
+        self.name = 'CheckRMS_{det_name}'
+        self.det_data_key=f'det_data_k{det_name}_kWIBEth'
+
         if not isinstance(threshold,list): #one value for all planes
             self.df_threshold = pd.DataFrame({"plane":[0,1,2],"threshold":np.full(3,threshold)})
         elif len(threshold)==1: #one value for all planes
@@ -97,17 +104,79 @@ class CheckRMS_HD_TPC(DQMTest):
         
 
     def run_test(self,df_dict):
-        df_tmp = df_dict["det_data_kHD_TPC_kWIBEth"].join(df_dict["daqh"]).reset_index().merge(self.df_threshold,on=["plane"])
-        df_tmp = df_tmp[["channel","rms","crate_id","plane","threshold"]].groupby(by="channel").mean().reset_index()
+
+        if self.det_data_key not in df_dict.keys():
+            return DQMTestResult(DQMResultEnum.WARNING,f'Could not find {self.det_data_key} in DataFrame dict.')
+        
+        df_tmp = df_dict[self.det_data_key].reset_index().merge(self.df_threshold,on=["plane"])
+        df_tmp = df_tmp[["channel","rms","threshold"]].groupby(by="channel").mean().reset_index()
         df_tmp = df_tmp.loc[self.operator(df_tmp["rms"],df_tmp["threshold"])]
         n_rms_bad = len(np.unique(df_tmp["channel"]))
+
         if n_rms_bad==0:
             return DQMTestResult(DQMResultEnum.OK,f'OK')
+
         else:
             if self.verbose:
                 print("CHANNELS FAILING RMS CHECK")
-                print(tabulate(df_tmp.reset_index()[["channel","rms","crate_id","plane","threshold"]],
-                               headers=["Channel","RMS","APA","Plane","Threshold"],
-                               showindex=False,tablefmt='pretty'))
+                df_tmp = df_tmp.merge(df_dict[self.det_data_key].reset_index()[["channel","apa","plane"]].drop_duplicates(["channel"]),on=["channel"])
+                print(tabulate(df_tmp.reset_index()[["channel","rms","apa","plane","threshold"]],
+                               headers=["Channel","RMS","APA/CRP","Plane","Threshold"],
+                               showindex=False,tablefmt='pretty',floatfmt=".2f"))
             return DQMTestResult(DQMResultEnum.BAD,
                                  f'{n_rms_bad} channels have RMS outside of range.')
+
+class CheckPedestal_WIBEth(DQMTest):
+
+    def __init__(self,det_name,lower_bound=[7500,200],upper_bound=[9500,2000],verbose=False):
+        super().__init__()
+        self.name = 'CheckPedestal_{det_name}'
+        self.det_data_key=f'det_data_k{det_name}_kWIBEth'
+
+        if not isinstance(lower_bound,list): #one value for all planes
+            self.df_lower_bound = pd.DataFrame({"plane":[0,1,2],"lower_bound":np.full(3,lower_bound)})
+        elif len(lower_bound)==1: #one value for all planes
+            self.df_lower_bound = pd.DataFrame({"plane":[0,1,2],"lower_bound":np.full(3,lower_bound[0])})
+        elif len(lower_bound)==2: #two values, first induction, second collection
+            self.df_lower_bound = pd.DataFrame({"plane":[0,1,2],"lower_bound":np.array([lower_bound[0],lower_bound[0],lower_bound[1]])})
+        elif len(lower_bound)==3: #three values, one for each plane
+            self.df_lower_bound = pd.DataFrame({"plane":[0,1,2],"lower_bound":np.array(lower_bound)})
+        else:
+            print(f'Lower_Bound length {len(lower_bound)} is not valid.',lower_bound)
+            raise ValueError
+
+        if not isinstance(upper_bound,list): #one value for all planes
+            self.df_upper_bound = pd.DataFrame({"plane":[0,1,2],"upper_bound":np.full(3,upper_bound)})
+        elif len(upper_bound)==1: #one value for all planes
+            self.df_upper_bound = pd.DataFrame({"plane":[0,1,2],"upper_bound":np.full(3,upper_bound[0])})
+        elif len(upper_bound)==2: #two values, first induction, second collection
+            self.df_upper_bound = pd.DataFrame({"plane":[0,1,2],"upper_bound":np.array([upper_bound[0],upper_bound[0],upper_bound[1]])})
+        elif len(upper_bound)==3: #three values, one for each plane
+            self.df_upper_bound = pd.DataFrame({"plane":[0,1,2],"upper_bound":np.array(upper_bound)})
+        else:
+            print(f'Upper_Bound length {len(upper_bound)} is not valid.',upper_bound)
+            raise ValueError
+
+        self.verbose = verbose
+        
+
+    def run_test(self,df_dict):
+
+        if self.det_data_key not in df_dict.keys():
+            return DQMTestResult(DQMResultEnum.WARNING,f'Could not find {self.det_data_key} in DataFrame dict.')
+        
+        df_tmp = df_dict[self.det_data_key].reset_index().merge(self.df_lower_bound,on=["plane"]).merge(self.df_upper_bound,on=["plane"])
+        df_tmp = df_tmp[["channel","mean","lower_bound","upper_bound"]].groupby(by="channel").mean().reset_index()
+        df_tmp = df_tmp.loc[(df_tmp["mean"]<df_tmp["lower_bound"])|(df_tmp["mean"]>df_tmp["upper_bound"])]
+        n_bad = len(np.unique(df_tmp["channel"]))
+        if n_bad==0:
+            return DQMTestResult(DQMResultEnum.OK,f'OK')
+        else:
+            if self.verbose:
+                print("CHANNELS FAILING PEDESTAL CHECK")
+                df_tmp = df_tmp.merge(df_dict[self.det_data_key].reset_index()[["channel","apa","plane"]].drop_duplicates(["channel"]),on=["channel"])
+                print(tabulate(df_tmp.reset_index()[["channel","mean","apa","plane","lower_bound","upper_bound"]],
+                               headers=["Channel","Pedestal","APA/CRP","Plane","Lower Bound","Upper Bound"],
+                               showindex=False,tablefmt='pretty',floatfmt=".2f"))
+            return DQMTestResult(DQMResultEnum.BAD,
+                                 f'{n_bad} channels have pedestal outside of range.')

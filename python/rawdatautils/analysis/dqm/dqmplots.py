@@ -24,26 +24,25 @@ def get_CERN_timestamp(df_dict,index):
     trigger_time = df_dict['trh'].loc[index[0:3]]["trigger_timestamp"]
     return datetime.fromtimestamp(trigger_time*16 // 1e9).astimezone(pytz.timezone("Europe/Zurich"))
 
-def plot_HD_TPC_by_channel(df_dict,var,run=None,trigger=None,seq=None,yrange=None,jpeg_base=None):
+def plot_WIBEth_by_channel(df_dict,var,det_name,run=None,trigger=None,seq=None,yrange=None,jpeg_base=None):
     
-    df_tmp, index = dfc.SelectRecord(df_dict["det_data_kHD_TPC_kWIBEth"],run,trigger,seq)
-    
-    df_tmp = df_tmp.join(df_dict['daqh'][["crate_id"]]).reset_index()
-    df_tmp["apa_plane_label"] = df_tmp[["crate_id","plane"]].apply(lambda x: f'APA {x.crate_id}, Plane {x.plane}',axis=1)
+    df_tmp, index = dfc.SelectRecord(df_dict[f"det_data_k{det_name}_kWIBEth"],run,trigger,seq)
+    df_tmp = df_tmp.reset_index()
+    df_tmp["apa_plane_label"] = df_tmp[["apa","plane"]].apply(lambda x: f'{x.apa}, Plane {x.plane}',axis=1)
     
     trigger_time = get_CERN_timestamp(df_dict,index);
-    
+
     fig = px.scatter(df_tmp,x="channel",y=var,color="apa_plane_label",width=1000,height=600)
-    fig.update_layout(xaxis_title='Channel',yaxis_title=var,legend_title='APA/Plane',title=f'Run {index[0]}, Record ({index[1],index[2]}), Time {trigger_time}')
+    fig.update_layout(xaxis_title='Channel',yaxis_title=var,legend_title='APA/CRP, Plane',title=f'Run {index[0]}, Record ({index[1],index[2]}), Time {trigger_time}')
     if yrange is not None:
        fig.update_yaxes(range=yrange)
     if jpeg_base is not None:
         fig.write_image(f"{jpeg_base}_run{index[0]}_trigger{index[1]}_seq{index[2]}.jpeg")
     return fig
 
-def plot_HD_TPC_pulser_by_channel(df_dict,run=None,trigger=None,seq=None,jpeg_base=None):
+def plot_WIBEth_pulser_by_channel(df_dict,det_name,run=None,trigger=None,seq=None,jpeg_base=None):
     
-    df_tmp, index = dfc.SelectRecord(df_dict["det_data_kHD_TPC_kWIBEth"],run,trigger,seq)
+    df_tmp, index = dfc.SelectRecord(df_dict[f"det_data_k{det_name}_kWIBEth"],run,trigger,seq)
     df_tmp= df_tmp.reset_index()
     
     trigger_time = get_CERN_timestamp(df_dict,index);
@@ -53,7 +52,7 @@ def plot_HD_TPC_pulser_by_channel(df_dict,run=None,trigger=None,seq=None,jpeg_ba
     fig.update_layout(xaxis_title='Channel',
                       yaxis_title="ADC value",
                       legend_title=None,
-                      title=f'Run {index[0]}, Record ({index[1],index[2]}), Time {trigger_time}')
+                      title=f'WIB Pulser Check: Run {index[0]}, Record ({index[1],index[2]}), Time {trigger_time}')
     if jpeg_base is not None:
         fig.write_image(f"{jpeg_base}_run{index[0]}_trigger{index[1]}_seq{index[2]}.jpeg")
     return fig
