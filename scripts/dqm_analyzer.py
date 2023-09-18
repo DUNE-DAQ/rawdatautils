@@ -66,22 +66,24 @@ def main(filenames, nrecords, nworkers, hd, wibpulser, make_plots):
 
     df_dict = dfc.ConcatenateDataFrames(df_dict)
 
+    print(df_dict.keys())
+    
     dqm_test_suite.do_all_tests(df_dict)
     print(dqm_test_suite.get_table())
 
     if(make_plots):
         if(hd):
             if(not wibpulser):
-                plot_WIBEth_by_channel(df_dict,var="rms",det_name="HD_TPC",jpeg_base="pdune2_hd_tpc_rms")
-                plot_WIBEth_by_channel(df_dict,var="rms",det_name="HD_TPC",yrange=[-1,60],jpeg_base="pdune2_hd_tpc_rms_fixrange")
-                plot_WIBEth_by_channel(df_dict,var="mean",det_name="HD_TPC",jpeg_base="pdune2_hd_tpc_mean")
+                plot_WIBEth_by_channel(df_dict,var="adc_rms",det_name="HD_TPC",jpeg_base="pdune2_hd_tpc_rms")
+                plot_WIBEth_by_channel(df_dict,var="adc_rms",det_name="HD_TPC",yrange=[-1,60],jpeg_base="pdune2_hd_tpc_rms_fixrange")
+                plot_WIBEth_by_channel(df_dict,var="adc_mean",det_name="HD_TPC",jpeg_base="pdune2_hd_tpc_mean")
             if(wibpulser):
                 plot_WIBEth_pulser_by_channel(df_dict,det_name="HD_TPC",jpeg_base='pdune2_hd_tpc_pulser')
         else:
             if(not wibpulser):
-                plot_WIBEth_by_channel(df_dict,var="rms",det_name="VD_BottomTPC",jpeg_base="pdune2_vd_tpc_rms")
-                plot_WIBEth_by_channel(df_dict,var="rms",det_name="VD_BottomTPC",yrange=[-1,60],jpeg_base="pdune2_vd_tpc_rms_fixrange")
-                plot_WIBEth_by_channel(df_dict,var="mean",det_name="VD_BottomTPC",jpeg_base="pdune2_vd_tpc_mean")
+                plot_WIBEth_by_channel(df_dict,var="adc_rms",det_name="VD_BottomTPC",jpeg_base="pdune2_vd_tpc_rms")
+                plot_WIBEth_by_channel(df_dict,var="adc_rms",det_name="VD_BottomTPC",yrange=[-1,60],jpeg_base="pdune2_vd_tpc_rms_fixrange")
+                plot_WIBEth_by_channel(df_dict,var="adc_mean",det_name="VD_BottomTPC",jpeg_base="pdune2_vd_tpc_mean")
             if(wibpulser):
                 plot_WIBEth_pulser_by_channel(df_dict,det_name="VD_BottomTPC",jpeg_base='pdune2_vd_tpc_pulser')
 

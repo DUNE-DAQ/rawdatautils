@@ -22,7 +22,7 @@ class CheckTimestampDiffs_WIBEth(DQMTest):
     def __init__(self,det_name):
         super().__init__()
         self.name = f'CheckTimestampDiffs_WIBEth_{det_name}'
-        self.det_head_key=f'det_head_k{det_name}_kWIBEth'
+        self.det_head_key=f'deth_k{det_name}_kWIBEth'
         
     def run_test(self,df_dict):
 
@@ -53,8 +53,8 @@ class CheckTimestampsAligned(DQMTest):
         df_tmp = df_dict["daqh"].loc[df_dict["daqh"]["det_id"]==self.det_id]
         if len(df_tmp)==0:
             return DQMTestResult(DQMResultEnum.WARNING,f'WARNING: No components found with detector id {self.det_id}.')
-        df_tmp = df_tmp.groupby(by=["run_idx","record_idx","sequence_idx"])
-        n_different = df_tmp["timestamp_first"].agg(CheckTimestampsAligned.any_different).sum()
+        df_tmp = df_tmp.groupby(by=["run","trigger","sequence"])
+        n_different = df_tmp["timestamp_first_dts"].agg(CheckTimestampsAligned.any_different).sum()
         if n_different==0:
             return DQMTestResult(DQMResultEnum.OK,f'OK')
         else:
@@ -68,10 +68,10 @@ class CheckNFrames_WIBEth(DQMTest):
         self.name = "CheckNFrames_WIBEth"
 
     def run_test(self,df_dict):
-        df_tmp = df_dict["frh"].loc[df_dict["frh"]["fragment_type"]==12][["window_begin","window_end"]]
+        df_tmp = df_dict["frh"].loc[df_dict["frh"]["fragment_type"]==12][["window_begin_dts","window_end_dts"]]
         if len(df_tmp)==0:
             return DQMTestResult(DQMResultEnum.WARNING,f'WARNING: No WIBEth components found.')
-        df_tmp["expected_frames"] = np.floor((df_tmp["window_end"]-df_tmp["window_begin"])/(32*64))+1
+        df_tmp["expected_frames"] = np.floor((df_tmp["window_end_dts"]-df_tmp["window_begin_dts"])/(32*64))+1
         df_tmp = df_tmp.join(df_dict["daqh"][["n_obj"]])
         n_frames_wrong = (df_tmp["expected_frames"]!=df_tmp["n_obj"]).sum()
         if n_frames_wrong==0:
@@ -86,7 +86,7 @@ class CheckRMS_WIBEth(DQMTest):
     def __init__(self,det_name,threshold=100,operator=operator.gt,verbose=False):
         super().__init__()
         self.name = 'CheckRMS_{det_name}'
-        self.det_data_key=f'det_data_k{det_name}_kWIBEth'
+        self.det_data_key=f'detd_k{det_name}_kWIBEth'
 
         if not isinstance(threshold,list): #one value for all planes
             self.df_threshold = pd.DataFrame({"plane":[0,1,2],"threshold":np.full(3,threshold)})
@@ -109,8 +109,8 @@ class CheckRMS_WIBEth(DQMTest):
             return DQMTestResult(DQMResultEnum.WARNING,f'Could not find {self.det_data_key} in DataFrame dict.')
         
         df_tmp = df_dict[self.det_data_key].reset_index().merge(self.df_threshold,on=["plane"])
-        df_tmp = df_tmp[["channel","rms","threshold"]].groupby(by="channel").mean().reset_index()
-        df_tmp = df_tmp.loc[self.operator(df_tmp["rms"],df_tmp["threshold"])]
+        df_tmp = df_tmp[["channel","adc_rms","threshold"]].groupby(by="channel").mean().reset_index()
+        df_tmp = df_tmp.loc[self.operator(df_tmp["adc_rms"],df_tmp["threshold"])]
         n_rms_bad = len(np.unique(df_tmp["channel"]))
 
         if n_rms_bad==0:
@@ -120,7 +120,7 @@ class CheckRMS_WIBEth(DQMTest):
             if self.verbose:
                 print("CHANNELS FAILING RMS CHECK")
                 df_tmp = df_tmp.merge(df_dict[self.det_data_key].reset_index()[["channel","apa","plane"]].drop_duplicates(["channel"]),on=["channel"])
-                print(tabulate(df_tmp.reset_index()[["channel","rms","apa","plane","threshold"]],
+                print(tabulate(df_tmp.reset_index()[["channel","adc_rms","apa","plane","threshold"]],
                                headers=["Channel","RMS","APA/CRP","Plane","Threshold"],
                                showindex=False,tablefmt='pretty',floatfmt=".2f"))
             return DQMTestResult(DQMResultEnum.BAD,
@@ -131,7 +131,7 @@ class CheckPedestal_WIBEth(DQMTest):
     def __init__(self,det_name,lower_bound=[7500,200],upper_bound=[9500,2000],verbose=False):
         super().__init__()
         self.name = 'CheckPedestal_{det_name}'
-        self.det_data_key=f'det_data_k{det_name}_kWIBEth'
+        self.det_data_key=f'detd_k{det_name}_kWIBEth'
 
         if not isinstance(lower_bound,list): #one value for all planes
             self.df_lower_bound = pd.DataFrame({"plane":[0,1,2],"lower_bound":np.full(3,lower_bound)})
@@ -166,8 +166,8 @@ class CheckPedestal_WIBEth(DQMTest):
             return DQMTestResult(DQMResultEnum.WARNING,f'Could not find {self.det_data_key} in DataFrame dict.')
         
         df_tmp = df_dict[self.det_data_key].reset_index().merge(self.df_lower_bound,on=["plane"]).merge(self.df_upper_bound,on=["plane"])
-        df_tmp = df_tmp[["channel","mean","lower_bound","upper_bound"]].groupby(by="channel").mean().reset_index()
-        df_tmp = df_tmp.loc[(df_tmp["mean"]<df_tmp["lower_bound"])|(df_tmp["mean"]>df_tmp["upper_bound"])]
+        df_tmp = df_tmp[["channel","adc_mean","lower_bound","upper_bound"]].groupby(by="channel").mean().reset_index()
+        df_tmp = df_tmp.loc[(df_tmp["adc_mean"]<df_tmp["lower_bound"])|(df_tmp["adc_mean"]>df_tmp["upper_bound"])]
         n_bad = len(np.unique(df_tmp["channel"]))
         if n_bad==0:
             return DQMTestResult(DQMResultEnum.OK,f'OK')
@@ -175,7 +175,7 @@ class CheckPedestal_WIBEth(DQMTest):
             if self.verbose:
                 print("CHANNELS FAILING PEDESTAL CHECK")
                 df_tmp = df_tmp.merge(df_dict[self.det_data_key].reset_index()[["channel","apa","plane"]].drop_duplicates(["channel"]),on=["channel"])
-                print(tabulate(df_tmp.reset_index()[["channel","mean","apa","plane","lower_bound","upper_bound"]],
+                print(tabulate(df_tmp.reset_index()[["channel","adc_mean","apa","plane","lower_bound","upper_bound"]],
                                headers=["Channel","Pedestal","APA/CRP","Plane","Lower Bound","Upper Bound"],
                                showindex=False,tablefmt='pretty',floatfmt=".2f"))
             return DQMTestResult(DQMResultEnum.BAD,
