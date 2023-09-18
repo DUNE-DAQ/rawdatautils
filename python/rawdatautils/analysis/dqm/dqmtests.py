@@ -41,25 +41,40 @@ class CheckTimestampDiffs_WIBEth(DQMTest):
 
 class CheckTimestampsAligned(DQMTest):
 
-    def __init__(self,det_id):
+    def __init__(self,det_id,verbose=True):
         super().__init__()
         self.det_id = det_id
         self.name = f'CheckTimestampsAligned_{det_id}'
-
+        self.verbose = verbose
+        
     def any_different(arr):
         return (arr.values!=arr.values[0]).sum()
+
+    def unique(arr):
+        return np.unique(arr.values,return_counts=True)
     
     def run_test(self,df_dict):
         df_tmp = df_dict["daqh"].loc[df_dict["daqh"]["det_id"]==self.det_id]
         if len(df_tmp)==0:
             return DQMTestResult(DQMResultEnum.WARNING,f'WARNING: No components found with detector id {self.det_id}.')
-        df_tmp = df_tmp.groupby(by=["run","trigger","sequence"])
-        n_different = df_tmp["timestamp_first_dts"].agg(CheckTimestampsAligned.any_different).sum()
+        df_tmp_gb = df_tmp.groupby(by=["run","trigger","sequence"])["timestamp_first_dts"].agg(CheckTimestampsAligned.unique)
+        df_tmp_gb_n = df_tmp_gb.apply(lambda x: len(x[1]))
+        n_different = (df_tmp_gb_n!=1).sum()
         if n_different==0:
             return DQMTestResult(DQMResultEnum.OK,f'OK')
         else:
+            if self.verbose:
+                df_tmp_gb_mode = df_tmp_gb.apply(lambda x: x[0][np.argmax(x[1])])
+                df_tmp = df_tmp.join(df_tmp_gb_mode,rsuffix='_majority')
+                df_tmp = df_tmp.loc[(df_tmp["timestamp_first"]!=df_tmp["timestamp_first_majority"])]
+                df_tmp["timestamp_diff"] = df_tmp["timestamp_first"]-df_tmp["timestamp_first_majority"]
+                n_different = len(np.unique(df_tmp.reset_index()["src_id"].apply(lambda x: int(x.id))))
+                print("FRAGMENTS FAILING TIMESTAMP ALIGNMENT")
+                print(tabulate(df_tmp.reset_index()[["record_idx","sequence_idx","crate_id","slot_id","stream_id","timestamp_first","timestamp_first_majority","timestamp_diff"]],
+                               headers=["Record","Seq.","Crate","Slot","Stream","Timestamp (first)","Majority timestamp","Difference"],
+                               showindex=False,tablefmt='pretty'))
             return DQMTestResult(DQMResultEnum.BAD,
-                                 f'{n_different} / {len(df_tmp)} records have timestamp misalignment for det_id {self.det_id}.')
+                                 f'{n_different} sources have some timestamp misalignment for det_id {self.det_id}.')
 
 class CheckNFrames_WIBEth(DQMTest):
 
@@ -76,7 +91,7 @@ class CheckNFrames_WIBEth(DQMTest):
         n_frames_wrong = (df_tmp["expected_frames"]!=df_tmp["n_obj"]).sum()
         if n_frames_wrong==0:
             return DQMTestResult(DQMResultEnum.OK,f'OK')
-        else: 
+        else:            
             return DQMTestResult(DQMResultEnum.BAD,
                                  f'{n_frames_wrong} / {len(df_tmp)} WIBEth fragments have the wrong number of frames.')
 
