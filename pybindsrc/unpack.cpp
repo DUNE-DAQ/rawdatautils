@@ -65,12 +65,17 @@ namespace daphne {
   extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
   extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
   extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
+  extern py::array_t<uint8_t> np_array_channels(daqdataformats::Fragment& frag);
+  extern py::array_t<uint8_t> np_array_channels_data(void* data, int nframes);
 
   extern uint32_t get_n_frames_stream(daqdataformats::Fragment const& frag);
   extern py::array_t<uint16_t> np_array_adc_stream(daqdataformats::Fragment& frag);
   extern py::array_t<uint16_t> np_array_adc_stream_data(void* data, int nframes);
   extern py::array_t<uint64_t> np_array_timestamp_stream(daqdataformats::Fragment& frag);
   extern py::array_t<uint64_t> np_array_timestamp_stream_data(void* data, int nframes);
+  extern py::array_t<uint8_t> np_array_channels_stream(daqdataformats::Fragment& frag);
+  extern py::array_t<uint8_t> np_array_channels_stream_data(void* data, int nframes);
+  
 
 }
 
@@ -122,6 +127,11 @@ register_unpack(py::module& m) {
   daphne_module.def("np_array_timestamp_stream", &daphne::np_array_timestamp_stream);
   daphne_module.def("np_array_adc_stream_data", &daphne::np_array_adc_stream_data);
   daphne_module.def("np_array_timestamp_stream_data", &daphne::np_array_timestamp_stream_data);
+  daphne_module.def("np_array_channels_data", &daphne::np_array_channels_data);
+  daphne_module.def("np_array_channels", &daphne::np_array_channels);
+  daphne_module.def("np_array_channels_stream_data", &daphne::np_array_channels_stream_data);
+  daphne_module.def("np_array_channels_stream", &daphne::np_array_channels_stream);
+
 
   py::module_ tde_module = m.def_submodule("tde");
   tde_module.def("get_n_frames", &tde::get_n_frames);

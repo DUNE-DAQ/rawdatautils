@@ -114,7 +114,7 @@ class FragmentUnpacker(Unpacker):
         if(self.is_trigger_unpacker):
             trgh, trgd = self.get_trg_data(in_data)
             if trgh is not None: data_dict["trgh"] = trgh
-            if trg is not None: data_dict["trgd"] = trgd
+            if trgd is not None: data_dict["trgd"] = trgd
 
         if(self.is_detector_unpacker):
             type_string = type_string = f'{detdataformats.DetID.Subdetector(in_data.get_detector_id()).name}_{in_data.get_fragment_type().name}'
@@ -374,15 +374,15 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
     def get_det_header_data(self,frag):
         frh = frag.get_header()
         dh = self.frame_obj(frag.get_data()).get_header()
-        ts_diff_vals, ts_diff_counts = np.unique(np.diff(self.unpacker.np_array_timestamp(frag)),return_counts=True)
+        ts_diffs_vals, ts_diffs_counts = np.unique(np.diff(self.unpacker.np_array_timestamp(frag)),return_counts=True)
         return [ DAPHNEStreamHeaderData(run=frh.run_number,
                                         trigger=frh.trigger_number,
                                         sequence=frh.sequence_number,
                                         src_id=frh.element_id.id,
                                         n_channels=self.N_CHANNELS_PER_FRAME,
                                         sampling_period=self.SAMPLING_PERIOD,
-                                        ts_diffs_vals=self.ts_diff_vals,
-                                        ts_diff_counts=self.ts_diff_counts) ]
+                                        ts_diffs_vals=ts_diffs_vals,
+                                        ts_diffs_counts=ts_diffs_counts) ]
 
     def get_det_data_all(self,frag):
         frh = frag.get_header()
