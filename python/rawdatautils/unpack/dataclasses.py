@@ -107,6 +107,25 @@ class FragmentHeaderData(FragmentDataBase):
         self.window_begin_time = dts_to_datetime(self.window_begin_dts)
         self.window_end_time = dts_to_datetime(self.window_end_dts)
 
+@dataclass(order=True)
+class TriggerHeaderData(FragmentDataBase):
+
+    n_obj: int
+    version: int
+    
+@dataclass(order=True)
+class TriggerPrimitiveData(FragmentDataBase):
+
+    time_start: int
+    time_peak: int
+    time_over_threshold: int
+    channel: int
+    adc_integral: int
+    adc_peak: int
+    detid: int
+    tp_type: int
+    algorithm: int
+    flag: int
 
 @dataclass(order=True)
 class DAQHeaderData(FragmentDataBase):

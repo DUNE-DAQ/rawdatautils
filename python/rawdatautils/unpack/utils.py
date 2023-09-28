@@ -48,10 +48,7 @@ class SourceIDUnpacker(Unpacker):
                               version=sid.version) ]
 
     def get_all_data(self,in_data):
-        #in_data[0]=sid
-        #in_data[1]=run
-        #in_data[2]=trigger
-        #in_data[3]=sequence
+        #in_data = sid
         return { "sid": self.get_srcid_data(in_data) }
 
 class TriggerRecordHeaderUnpacker(Unpacker):
@@ -110,14 +107,19 @@ class FragmentUnpacker(Unpacker):
         #in_data = fragment
         
         data_dict = { "frh": self.get_frh_data(in_data) }
+
+        #if no data, nothing to unpack further
+        if in_data.get_data_size()==0:
+            return data_dict
         
+        type_string = f'{detdataformats.DetID.Subdetector(in_data.get_detector_id()).name}_{in_data.get_fragment_type().name}'
+
         if(self.is_trigger_unpacker):
             trgh, trgd = self.get_trg_data(in_data)
-            if trgh is not None: data_dict["trgh"] = trgh
-            if trg is not None: data_dict["trgd"] = trgd
+            if trgh is not None: data_dict[f"trgh_{type_string}"] = trgh
+            if trg is not None: data_dict[f"trgd_{type_string}"] = trgd
 
         if(self.is_detector_unpacker):
-            type_string = type_string = f'{detdataformats.DetID.Subdetector(in_data.get_detector_id()).name}_{in_data.get_fragment_type().name}'
             daqh, deth, detd, detw = self.get_det_data(in_data)
             if daqh is not None: data_dict["daqh"] = daqh
             if deth is not None: data_dict[f"deth_{type_string}"] = deth
@@ -130,69 +132,48 @@ class TriggerDataUnpacker(FragmentUnpacker):
     
     is_trigger_unpacker = True
 
-    DICT_TRGH_COLS = [
-        "n_obj",
-        "version"        
-    ]
-    trg_header_dict_name = "trgh"
-    
-    def __init__(self,dict_idx):
-        super().__init__(dict_idx)
-
     def get_trg_data_version(self,frag):
         return None
 
-    def get_trg_data_dict(self,frag):
-        return None,None
+    def get_trg_data(self,frag):
+        return self.get_trg_header_data(frag),self.get_trg_obj_data(frag)
 
-    def get_trg_header_dict(self,frag):
-        dict_trgh = dict.fromkeys(self.DICT_TRGH_COLS)
-        dict_trgh["version"] = self.get_trg_data_version(frag)
-        dict_trgh["n_obj"] = self.get_n_obj(frag)
-        return (dict_trgh | self.dict_idx), 1, list(self.dict_idx.keys())
+    def get_trg_header_data(self,frag):
+        frh = frag.get_header()
+        return [ TriggerHeaderData(run=frh.run_number,
+                                   trigger=frh.trigger_number,
+                                   sequence=frh.sequence_number,
+                                   src_id=frh.element_id.id,
+                                   n_obj=self.get_n_obj(frag),
+                                   version=self.get_trg_data_version(frag)) ]
 
 
 class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
 
     trg_obj = trgdataformats.TriggerPrimitive
-    
-    DICT_TP_COLS = [
-        "time_start",
-        "time_peak",
-        "time_over_threshold",
-        "channel",
-        "adc_integral",
-        "adc_peak",
-        "detid",
-        "type",
-        "algorithm",
-        "flag"
-    ]
-    
-    def __init__(self,dict_idx):
-        super().__init__(dict_idx)
-
-    def get_n_obj(self,frag):
-        return frag.get_data_size()/trg_obj.sizeof()
-    
-    def get_trg_data_dict(self,frag):
-        dict_trgd = dict.fromkeys(self.DICT_TP_COLS)
-
-        for i in range(self.get_n_obj(frag)):
-            tp = trg_obj(frag.get_data(i*trg_obj.sizeof()))
         
-            dict_trgd["time_start"] = tp.time_start
-            dict_trgd["time_peak"] = tp.time_peak
-            dict_trgd["time_over_threshold"] = tp.time_over_threshold
-            dict_trgd["channel"] = tp.channel
-            dict_trgd["adc_integral"] = tp.adc_integral
-            dict_trgd["adc_peak"] = tp.adc_peak
-            dict_trgd["detid"] = tp.detid
-            dict_trgd["type"] = tp.type
-            dict_trgd["algorithm"] = tp.algorithm
-            dict_trgd["flag"] = tp.flag
-            
-            return (dict_trgd | self.dict_idx), self.n_obj(frag), list(self.dict_idx.keys())+["channel"]
+    def get_n_obj(self,frag):
+        return frag.get_data_size()/self.trg_obj.sizeof()
+    
+    def get_trg_obj_data(self,frag):
+        frh = frag.get_header()
+        tpd_list = []
+        for i_tp in range(self.get_n_obj(frag)):
+            tp = self.trg_obj(frag.get_data(i*self.trg_obj.sizeof()))
+            tpd_list.append( TriggerPrimitiveData(run=frh.run_number,
+                                                  trigger=frh.trigger_number,
+                                                  sequence=frh.sequence_number,
+                                                  src_id=frh.element_id.id,
+                                                  time_start=tp.time_start,
+                                                  time_peak=tp.time_peak,
+                                                  time_over_threshold=tp.time_over_threshold,
+                                                  channel=tp.channel,
+                                                  adc_integral=tp.adc_integral,
+                                                  adc_peak=tp.adc_peak,
+                                                  detid=tp.detid,
+                                                  tp_type=tp.type,
+                                                  algorithm=tp.algorithm,
+                                                  flag=tp.flag) )
 
 
 class DetectorFragmentUnpacker(FragmentUnpacker):
