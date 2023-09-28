@@ -6,7 +6,7 @@ import daqdataformats
 import detdataformats
 import fddetdataformats
 from rawdatautils.unpack.wibeth import *
-#from rawdatautils.utilities.wibeth import *
+from rawdatautils.utilities.wibeth import *
 import detchannelmaps
 
 import click
@@ -92,7 +92,7 @@ def main(filenames, nrecords, nskip, channel_map, print_headers, print_adc_stats
                 #print header info
                 if print_headers:
                     print('\n\t==== WIB HEADER (First Frame) ====')
-                    print_header(wf,prefix='\t\t')
+                    print_headers(wf,prefix='\t\t')
 
                 #fill channel map info if needed
                 if(offline_ch_num_dict.get(gid) is None):

@@ -178,7 +178,7 @@ class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
     def get_trg_data_dict(self,frag):
         dict_trgd = dict.fromkeys(self.DICT_TP_COLS)
 
-        for i in range(self.n_obj(frag)):
+        for i in range(self.get_n_obj(frag)):
             tp = trg_obj(frag.get_data(i*trg_obj.sizeof()))
         
             dict_trgd["time_start"] = tp.time_start
@@ -273,6 +273,65 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
 
     def get_det_header_data(self,frag):
         frh = frag.get_header()
+
+        n_frames = self.get_n_obj(frag)
+
+        pulser_arr = np.empty(n_frames)
+        calibration_arr = np.empty(n_frames)
+        ready_arr = np.empty(n_frames)
+        context_arr = np.empty(n_frames)
+        wib_sync_arr = np.empty(n_frames)
+        femb_sync_arr = np.empty(n_frames)
+        cd_arr = np.empty(n_frames)
+        crc_err_arr = np.empty(n_frames)
+        link_valid_arr = np.empty(n_frames)
+        lol_arr = np.empty(n_frames)
+        colddata_ts0_arr = np.empty(n_frames)
+        colddata_ts1_arr = np.empty(n_frames)
+        
+        for i in range(n_frames):
+            wh = self.frame_obj(frag.get_data(i*self.frame_obj.sizeof())).get_wibheader()
+
+            pulser_arr[i] = wh.pulser
+            calibration_arr[i] = wh.calibration
+            ready_arr[i] = wh.ready
+            context_arr[i] = wh.context
+
+            wib_sync_arr[i] = wh.wib_sync
+            femb_sync_arr[i] = wh.femb_sync
+
+            cd_arr[i] = wh.cd
+            crc_err_arr[i] = wh.crc_err
+            link_valid_arr[i] = wh.link_valid
+            lol_arr[i] = wh.lol
+
+            colddata_ts0_arr[i] = wh.colddata_timestamp_0
+            colddata_ts1_arr[i] = wh.colddata_timestamp_1
+
+        pulser_change_idx, pulser_change_val, _ = sparsify_array_diff_locs_and_vals(pulser_arr)
+        calibration_change_idx, calibration_change_val, _ = sparsify_array_diff_locs_and_vals(calibration_arr)
+        ready_change_idx, ready_change_val, _ = sparsify_array_diff_locs_and_vals(context_arr)
+        context_change_idx, context_change_val, _ = sparsify_array_diff_locs_and_vals(context_arr)
+
+        wib_sync_change_idx, wib_sync_change_val, _ = sparsify_array_diff_locs_and_vals(wib_sync_arr)
+        femb_sync_change_idx, femb_sync_change_val, _ = sparsify_array_diff_locs_and_vals(femb_sync_arr)
+
+        cd_change_idx, cd_change_val, _ = sparsify_array_diff_locs_and_vals(cd_arr)
+        crc_err_change_idx, crc_err_change_val, _ = sparsify_array_diff_locs_and_vals(crc_err_arr)
+        link_valid_change_idx, link_valid_change_val, _ = sparsify_array_diff_locs_and_vals(link_valid_arr)
+        lol_change_idx, lol_change_val, _ = sparsify_array_diff_locs_and_vals(context_arr)
+
+        colddata_ts0_diff = np.diff(colddata_ts0_arr)
+        colddata_ts0_diff[colddata_ts0_diff<0] = colddata_ts0_diff[colddata_ts0_diff<0]+0x8000
+        colddata_ts0_diff_change_idx, colddata_ts0_diff_change_val, _ = sparsify_array_diff_locs_and_vals(colddata_ts0_diff)
+        
+        colddata_ts1_diff = np.diff(colddata_ts1_arr)
+        colddata_ts1_diff[colddata_ts1_diff<0] = colddata_ts1_diff[colddata_ts1_diff<0]+0x8000
+        colddata_ts1_diff_change_idx, colddata_ts1_diff_change_val, _ = sparsify_array_diff_locs_and_vals(colddata_ts1_diff)
+
+        ts_arr = self.unpacker.np_array_timestamp(frag)
+        ts_diff_change_idx, ts_diff_change_val, _ = sparsify_array_diff_locs_and_vals(np.diff(ts_arr))
+        
         wh = self.frame_obj(frag.get_data()).get_wibheader()
         ts_diff_vals, ts_diff_counts = np.unique(np.diff(self.unpacker.np_array_timestamp(frag)),return_counts=True)
         return [ WIBEthHeaderData(run=frh.run_number,
@@ -280,15 +339,29 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
                                   sequence=frh.sequence_number,
                                   src_id=frh.element_id.id,
                                   femb_id=(wh.channel>>1)&0x3,
-                                  coldata_id=wh.channel&0x1,
+                                  colddata_id=wh.channel&0x1,
                                   version=wh.version,
-                                  pulser=wh.pulser,
-                                  calibration=wh.calibration,
-                                  context=wh.context,
+                                  pulser_vals=pulser_change_val, pulser_idx=pulser_change_idx,
+                                  calibration_vals=calibration_change_val, calibration_idx=calibration_change_idx,
+                                  ready_vals=ready_change_val, ready_idx=ready_change_idx,
+                                  context_vals=context_change_val, context_idx=context_change_idx,
+                                  wib_sync_vals=wib_sync_change_val, wib_sync_idx=wib_sync_change_idx,
+                                  femb_sync_vals=femb_sync_change_val, femb_sync_idx=femb_sync_change_idx,
+                                  cd_vals=cd_change_val, cd_idx=cd_change_idx,
+                                  crc_err_vals=crc_err_change_val, crc_err_idx=crc_err_change_idx,
+                                  link_valid_vals=link_valid_change_val, link_valid_idx=link_valid_change_idx,
+                                  lol_vals=lol_change_val, lol_idx=lol_change_idx,
+                                  colddata_timestamp_0_diff_vals=colddata_ts0_diff_change_val,
+                                  colddata_timestamp_0_diff_idx=colddata_ts0_diff_change_idx,
+                                  colddata_timestamp_0_first=colddata_ts0_arr[0],
+                                  colddata_timestamp_1_diff_vals=colddata_ts1_diff_change_val,
+                                  colddata_timestamp_1_diff_idx=colddata_ts1_diff_change_idx,
+                                  colddata_timestamp_1_first=colddata_ts1_arr[0],
+                                  timestamp_dts_diff_vals=ts_diff_change_val, timestamp_dts_diff_idx=ts_diff_change_idx,
+                                  timestamp_dts_first=ts_arr[0],
+                                  n_frames=n_frames,
                                   n_channels=self.N_CHANNELS_PER_FRAME,
-                                  sampling_period=self.SAMPLING_PERIOD,
-                                  ts_diffs_vals=ts_diff_vals,
-                                  ts_diffs_counts=ts_diff_counts) ]
+                                  sampling_period=self.SAMPLING_PERIOD) ]
 
     def get_det_data_all(self,frag):
         frh = frag.get_header()

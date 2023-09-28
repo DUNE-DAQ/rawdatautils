@@ -13,6 +13,31 @@ import detchannelmaps
 def dts_to_datetime(dts_timestamp):
     return datetime.fromtimestamp(dts_timestamp*16 // 1e9, tz=pytz.timezone("UTC"))
 
+## Sparsification and desparsifications for arrays
+
+def sparsify_array_diff_locs_and_vals(arr):
+    arr_diff_locs = np.insert(np.where(arr[1:]!=arr[:-1])[0],0,-1)+1
+    return arr_diff_locs,arr[arr_diff_locs],len(arr)
+
+def desparsify_array_diff_locs_and_vals(arr_diff_locs,arr_diff_vals,arr_size):
+    arr = np.empty(arrsize)
+    for i in range(len(arr_diff_locs)):
+        i_this = arr_diff_locs[i]
+        i_next = -1 if (i+1)==len(arr_diff_locs) else arr_diff_locs[i+1]
+        arr[i_this:i_next] = arr_diff_vals[i]
+    return arr
+
+def sparsify_array_diff_of_diff_locs_and_vals(arr):
+    arr_first = arr[0]
+    arr_diff = np.diff(arr)
+    arr_diff_locs, arr_diff_vals, _ = sparsify_array_diff_locs_and_vals(arr)
+    return arr_first,arr_diff_locs,arr_diff_vals,len(arr)
+
+def desparsify_array_diff_of_diff_locs_and_vals(arr_first,arr_diff_locs,arr_diff_vals,arr_size):
+    arr_diff = desparsify_array_diff_locs_and_vals(arr_diff_locs,arr_diff_vals,arr_size-1)
+    arr = np.concatenate(([0],arr_diff)).cumsum() + arr_first
+    return arr
+
 @dataclass(order=True)
 class RecordDataBase():
     run: int
@@ -102,16 +127,54 @@ class DAQHeaderData(FragmentDataBase):
 @dataclass(order=True)
 class WIBEthHeaderData(FragmentDataBase):
 
+    #first frame only
     femb_id: int
-    coldata_id: int
+    colddata_id: int
     version: int
-    pulser: int
-    calibration: int
-    context: int
+
+    #_idx arrays contain indices where value has changed from previous
+    #_vals arrays contain the values at those indices
+    pulser_vals: np.ndarray
+    pulser_idx: np.ndarray    
+    calibration_vals: np.ndarray
+    calibration_idx: np.ndarray
+    ready_vals: np.ndarray
+    ready_idx: np.ndarray
+    context_vals: np.ndarray
+    context_idx: np.ndarray
+
+    wib_sync_vals: np.ndarray
+    wib_sync_idx: np.ndarray
+    femb_sync_vals: np.ndarray
+    femb_sync_idx: np.ndarray
+
+    cd_vals: np.ndarray
+    cd_idx: np.ndarray
+    crc_err_vals: np.ndarray
+    crc_err_idx: np.ndarray
+    link_valid_vals: np.ndarray
+    link_valid_idx: np.ndarray
+    lol_vals: np.ndarray
+    lol_idx: np.ndarray
+
+    #these take differences between successive values,
+    #and then, as above, look for differences in those differences
+    #store first value so the full array can be reconstructed
+    colddata_timestamp_0_diff_vals: np.ndarray
+    colddata_timestamp_0_diff_idx: np.ndarray
+    colddata_timestamp_0_first: int
+
+    colddata_timestamp_1_diff_vals: np.ndarray
+    colddata_timestamp_1_diff_idx: np.ndarray
+    colddata_timestamp_1_first: int
+
+    timestamp_dts_diff_vals: np.ndarray
+    timestamp_dts_diff_idx: np.ndarray
+    timestamp_dts_first: int
+    
+    n_frames: int
     n_channels: int
     sampling_period: int
-    ts_diffs_vals: np.ndarray
-    ts_diffs_counts: np.ndarray
 
 @dataclass(order=True)
 class WIBEthChannelDataBase(FragmentDataBase):
