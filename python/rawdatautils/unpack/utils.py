@@ -374,7 +374,7 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
     def get_det_header_data(self,frag):
         frh = frag.get_header()
         dh = self.frame_obj(frag.get_data()).get_header()
-        ts_diffs_vals, ts_diffs_counts = np.unique(np.diff(self.unpacker.np_array_timestamp(frag)),return_counts=True)
+        ts_diffs_vals, ts_diffs_counts = np.unique(np.diff( np.array(self.unpacker.np_array_timestamp_stream(frag), dtype=np.int64)), return_counts=True)
         return [ DAPHNEStreamHeaderData(run=frh.run_number,
                                         trigger=frh.trigger_number,
                                         sequence=frh.sequence_number,
@@ -408,6 +408,7 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
             adc_max = np.max(adcs,axis=0)
             adc_min = np.min(adcs,axis=0)
             adc_median = np.median(adcs,axis=0)
+            #adc_mode = np.argmax(np.bincount(adcs))
             ana_data = [ DAPHNEStreamAnalysisData(run=frh.run_number,
                                                   trigger=frh.trigger_number,
                                                   sequence=frh.sequence_number,
@@ -418,6 +419,7 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
                                                   adc_rms=adc_rms[i_ch],
                                                   adc_max=adc_max[i_ch],
                                                   adc_min=adc_min[i_ch],
+                                                  #adc_mode=adc_mode[i_ch],
                                                   adc_median=adc_median[i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
         if get_wvfm_data:
             timestamps = self.unpacker.np_array_timestamp_stream(frag)
@@ -472,16 +474,22 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
 
         n_frames = self.get_n_obj(frag)
         adcs = self.unpacker.np_array_adc(frag)
+
         daphne_headers = [ self.frame_obj(frag.get_data(iframe*self.frame_obj.sizeof())).get_header() for iframe in range(n_frames) ]
         timestamp = self.unpacker.np_array_timestamp(frag)
 
+        if (len(adcs)) == 0:
+            #print(adcs)
+            return None, None
+    
         if get_ana_data:
-
+            print(adcs)
             adc_mean = np.mean(adcs,axis=0)
             adc_rms = np.std(adcs,axis=0)
             adc_max = np.max(adcs,axis=0)
             adc_min = np.min(adcs,axis=0)
             adc_median = np.median(adcs,axis=0)
+            #adc_mode = [np.argmax(np.bincount(adcs[i])) for i in range(len(adcs))]
             ts_max = np.argmax(adcs,axis=0)*self.SAMPLING_PERIOD + timestamp
             ts_min = np.argmin(adcs,axis=0)*self.SAMPLING_PERIOD + timestamp
 
@@ -499,6 +507,7 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
                                             adc_rms=adc_rms[iframe],
                                             adc_max=adc_max[iframe],
                                             adc_min=adc_min[iframe],
+                                            #adc_mode=adc_mode[iframe],
                                             adc_median=adc_median[iframe],
                                             timestamp_max_dts=ts_max[iframe],
                                             timestamp_min_dts=ts_min[iframe]) for iframe in range(n_frames) ]
