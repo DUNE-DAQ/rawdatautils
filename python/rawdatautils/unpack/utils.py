@@ -48,10 +48,7 @@ class SourceIDUnpacker(Unpacker):
                               version=sid.version) ]
 
     def get_all_data(self,in_data):
-        #in_data[0]=sid
-        #in_data[1]=run
-        #in_data[2]=trigger
-        #in_data[3]=sequence
+        #in_data = sid
         return { "sid": self.get_srcid_data(in_data) }
 
 class TriggerRecordHeaderUnpacker(Unpacker):
@@ -110,14 +107,19 @@ class FragmentUnpacker(Unpacker):
         #in_data = fragment
         
         data_dict = { "frh": self.get_frh_data(in_data) }
+
+        #if no data, nothing to unpack further
+        if in_data.get_data_size()==0:
+            return data_dict
         
+        type_string = f'{detdataformats.DetID.Subdetector(in_data.get_detector_id()).name}_{in_data.get_fragment_type().name}'
+
         if(self.is_trigger_unpacker):
             trgh, trgd = self.get_trg_data(in_data)
             if trgh is not None: data_dict["trgh"] = trgh
-            if trgd is not None: data_dict["trgd"] = trgd
+            if trg is not None: data_dict["trgd"] = trgd
 
         if(self.is_detector_unpacker):
-            type_string = type_string = f'{detdataformats.DetID.Subdetector(in_data.get_detector_id()).name}_{in_data.get_fragment_type().name}'
             daqh, deth, detd, detw = self.get_det_data(in_data)
             if daqh is not None: data_dict["daqh"] = daqh
             if deth is not None: data_dict[f"deth_{type_string}"] = deth
@@ -130,69 +132,48 @@ class TriggerDataUnpacker(FragmentUnpacker):
     
     is_trigger_unpacker = True
 
-    DICT_TRGH_COLS = [
-        "n_obj",
-        "version"        
-    ]
-    trg_header_dict_name = "trgh"
-    
-    def __init__(self,dict_idx):
-        super().__init__(dict_idx)
-
     def get_trg_data_version(self,frag):
         return None
 
-    def get_trg_data_dict(self,frag):
-        return None,None
+    def get_trg_data(self,frag):
+        return self.get_trg_header_data(frag),self.get_trg_obj_data(frag)
 
-    def get_trg_header_dict(self,frag):
-        dict_trgh = dict.fromkeys(self.DICT_TRGH_COLS)
-        dict_trgh["version"] = self.get_trg_data_version(frag)
-        dict_trgh["n_obj"] = self.get_n_obj(frag)
-        return (dict_trgh | self.dict_idx), 1, list(self.dict_idx.keys())
+    def get_trg_header_data(self,frag):
+        frh = frag.get_header()
+        return [ TriggerHeaderData(run=frh.run_number,
+                                   trigger=frh.trigger_number,
+                                   sequence=frh.sequence_number,
+                                   src_id=frh.element_id.id,
+                                   n_obj=self.get_n_obj(frag),
+                                   version=self.get_trg_data_version(frag)) ]
 
 
 class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
 
     trg_obj = trgdataformats.TriggerPrimitive
-    
-    DICT_TP_COLS = [
-        "time_start",
-        "time_peak",
-        "time_over_threshold",
-        "channel",
-        "adc_integral",
-        "adc_peak",
-        "detid",
-        "type",
-        "algorithm",
-        "flag"
-    ]
-    
-    def __init__(self,dict_idx):
-        super().__init__(dict_idx)
-
-    def get_n_obj(self,frag):
-        return frag.get_data_size()/trg_obj.sizeof()
-    
-    def get_trg_data_dict(self,frag):
-        dict_trgd = dict.fromkeys(self.DICT_TP_COLS)
-
-        for i in range(self.n_obj(frag)):
-            tp = trg_obj(frag.get_data(i*trg_obj.sizeof()))
         
-            dict_trgd["time_start"] = tp.time_start
-            dict_trgd["time_peak"] = tp.time_peak
-            dict_trgd["time_over_threshold"] = tp.time_over_threshold
-            dict_trgd["channel"] = tp.channel
-            dict_trgd["adc_integral"] = tp.adc_integral
-            dict_trgd["adc_peak"] = tp.adc_peak
-            dict_trgd["detid"] = tp.detid
-            dict_trgd["type"] = tp.type
-            dict_trgd["algorithm"] = tp.algorithm
-            dict_trgd["flag"] = tp.flag
-            
-            return (dict_trgd | self.dict_idx), self.n_obj(frag), list(self.dict_idx.keys())+["channel"]
+    def get_n_obj(self,frag):
+        return frag.get_data_size()/self.trg_obj.sizeof()
+    
+    def get_trg_obj_data(self,frag):
+        frh = frag.get_header()
+        tpd_list = []
+        for i_tp in range(self.get_n_obj(frag)):
+            tp = self.trg_obj(frag.get_data(i*self.trg_obj.sizeof()))
+            tpd_list.append( TriggerPrimitiveData(run=frh.run_number,
+                                                  trigger=frh.trigger_number,
+                                                  sequence=frh.sequence_number,
+                                                  src_id=frh.element_id.id,
+                                                  time_start=tp.time_start,
+                                                  time_peak=tp.time_peak,
+                                                  time_over_threshold=tp.time_over_threshold,
+                                                  channel=tp.channel,
+                                                  adc_integral=tp.adc_integral,
+                                                  adc_peak=tp.adc_peak,
+                                                  detid=tp.detid,
+                                                  tp_type=tp.type,
+                                                  algorithm=tp.algorithm,
+                                                  flag=tp.flag) )
 
 
 class DetectorFragmentUnpacker(FragmentUnpacker):
@@ -273,6 +254,65 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
 
     def get_det_header_data(self,frag):
         frh = frag.get_header()
+
+        n_frames = self.get_n_obj(frag)
+
+        pulser_arr = np.empty(n_frames)
+        calibration_arr = np.empty(n_frames)
+        ready_arr = np.empty(n_frames)
+        context_arr = np.empty(n_frames)
+        wib_sync_arr = np.empty(n_frames)
+        femb_sync_arr = np.empty(n_frames)
+        cd_arr = np.empty(n_frames)
+        crc_err_arr = np.empty(n_frames)
+        link_valid_arr = np.empty(n_frames)
+        lol_arr = np.empty(n_frames)
+        colddata_ts0_arr = np.empty(n_frames)
+        colddata_ts1_arr = np.empty(n_frames)
+        
+        for i in range(n_frames):
+            wh = self.frame_obj(frag.get_data(i*self.frame_obj.sizeof())).get_wibheader()
+
+            pulser_arr[i] = wh.pulser
+            calibration_arr[i] = wh.calibration
+            ready_arr[i] = wh.ready
+            context_arr[i] = wh.context
+
+            wib_sync_arr[i] = wh.wib_sync
+            femb_sync_arr[i] = wh.femb_sync
+
+            cd_arr[i] = wh.cd
+            crc_err_arr[i] = wh.crc_err
+            link_valid_arr[i] = wh.link_valid
+            lol_arr[i] = wh.lol
+
+            colddata_ts0_arr[i] = wh.colddata_timestamp_0
+            colddata_ts1_arr[i] = wh.colddata_timestamp_1
+
+        pulser_change_idx, pulser_change_val, _ = sparsify_array_diff_locs_and_vals(pulser_arr)
+        calibration_change_idx, calibration_change_val, _ = sparsify_array_diff_locs_and_vals(calibration_arr)
+        ready_change_idx, ready_change_val, _ = sparsify_array_diff_locs_and_vals(context_arr)
+        context_change_idx, context_change_val, _ = sparsify_array_diff_locs_and_vals(context_arr)
+
+        wib_sync_change_idx, wib_sync_change_val, _ = sparsify_array_diff_locs_and_vals(wib_sync_arr)
+        femb_sync_change_idx, femb_sync_change_val, _ = sparsify_array_diff_locs_and_vals(femb_sync_arr)
+
+        cd_change_idx, cd_change_val, _ = sparsify_array_diff_locs_and_vals(cd_arr)
+        crc_err_change_idx, crc_err_change_val, _ = sparsify_array_diff_locs_and_vals(crc_err_arr)
+        link_valid_change_idx, link_valid_change_val, _ = sparsify_array_diff_locs_and_vals(link_valid_arr)
+        lol_change_idx, lol_change_val, _ = sparsify_array_diff_locs_and_vals(context_arr)
+
+        colddata_ts0_diff = np.diff(colddata_ts0_arr)
+        colddata_ts0_diff[colddata_ts0_diff<0] = colddata_ts0_diff[colddata_ts0_diff<0]+0x8000
+        colddata_ts0_diff_change_idx, colddata_ts0_diff_change_val, _ = sparsify_array_diff_locs_and_vals(colddata_ts0_diff)
+        
+        colddata_ts1_diff = np.diff(colddata_ts1_arr)
+        colddata_ts1_diff[colddata_ts1_diff<0] = colddata_ts1_diff[colddata_ts1_diff<0]+0x8000
+        colddata_ts1_diff_change_idx, colddata_ts1_diff_change_val, _ = sparsify_array_diff_locs_and_vals(colddata_ts1_diff)
+
+        ts_arr = self.unpacker.np_array_timestamp(frag)
+        ts_diff_change_idx, ts_diff_change_val, _ = sparsify_array_diff_locs_and_vals(np.diff(ts_arr))
+        
         wh = self.frame_obj(frag.get_data()).get_wibheader()
         ts_diff_vals, ts_diff_counts = np.unique(np.diff(self.unpacker.np_array_timestamp(frag)),return_counts=True)
         return [ WIBEthHeaderData(run=frh.run_number,
@@ -280,15 +320,29 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
                                   sequence=frh.sequence_number,
                                   src_id=frh.element_id.id,
                                   femb_id=(wh.channel>>1)&0x3,
-                                  coldata_id=wh.channel&0x1,
+                                  colddata_id=wh.channel&0x1,
                                   version=wh.version,
-                                  pulser=wh.pulser,
-                                  calibration=wh.calibration,
-                                  context=wh.context,
+                                  pulser_vals=pulser_change_val, pulser_idx=pulser_change_idx,
+                                  calibration_vals=calibration_change_val, calibration_idx=calibration_change_idx,
+                                  ready_vals=ready_change_val, ready_idx=ready_change_idx,
+                                  context_vals=context_change_val, context_idx=context_change_idx,
+                                  wib_sync_vals=wib_sync_change_val, wib_sync_idx=wib_sync_change_idx,
+                                  femb_sync_vals=femb_sync_change_val, femb_sync_idx=femb_sync_change_idx,
+                                  cd_vals=cd_change_val, cd_idx=cd_change_idx,
+                                  crc_err_vals=crc_err_change_val, crc_err_idx=crc_err_change_idx,
+                                  link_valid_vals=link_valid_change_val, link_valid_idx=link_valid_change_idx,
+                                  lol_vals=lol_change_val, lol_idx=lol_change_idx,
+                                  colddata_timestamp_0_diff_vals=colddata_ts0_diff_change_val,
+                                  colddata_timestamp_0_diff_idx=colddata_ts0_diff_change_idx,
+                                  colddata_timestamp_0_first=colddata_ts0_arr[0],
+                                  colddata_timestamp_1_diff_vals=colddata_ts1_diff_change_val,
+                                  colddata_timestamp_1_diff_idx=colddata_ts1_diff_change_idx,
+                                  colddata_timestamp_1_first=colddata_ts1_arr[0],
+                                  timestamp_dts_diff_vals=ts_diff_change_val, timestamp_dts_diff_idx=ts_diff_change_idx,
+                                  timestamp_dts_first=ts_arr[0],
+                                  n_frames=n_frames,
                                   n_channels=self.N_CHANNELS_PER_FRAME,
-                                  sampling_period=self.SAMPLING_PERIOD,
-                                  ts_diffs_vals=ts_diff_vals,
-                                  ts_diffs_counts=ts_diff_counts) ]
+                                  sampling_period=self.SAMPLING_PERIOD) ]
 
     def get_det_data_all(self,frag):
         frh = frag.get_header()
@@ -408,7 +462,6 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
             adc_max = np.max(adcs,axis=0)
             adc_min = np.min(adcs,axis=0)
             adc_median = np.median(adcs,axis=0)
-            #adc_mode = np.argmax(np.bincount(adcs))
             ana_data = [ DAPHNEStreamAnalysisData(run=frh.run_number,
                                                   trigger=frh.trigger_number,
                                                   sequence=frh.sequence_number,
@@ -419,7 +472,6 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
                                                   adc_rms=adc_rms[i_ch],
                                                   adc_max=adc_max[i_ch],
                                                   adc_min=adc_min[i_ch],
-                                                  #adc_mode=adc_mode[i_ch],
                                                   adc_median=adc_median[i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
         if get_wvfm_data:
             timestamps = self.unpacker.np_array_timestamp_stream(frag)
@@ -479,7 +531,6 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
         timestamp = self.unpacker.np_array_timestamp(frag)
 
         if (len(adcs)) == 0:
-            #print(adcs)
             return None, None
     
         if get_ana_data:
@@ -489,7 +540,6 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
             adc_max = np.max(adcs,axis=0)
             adc_min = np.min(adcs,axis=0)
             adc_median = np.median(adcs,axis=0)
-            #adc_mode = [np.argmax(np.bincount(adcs[i])) for i in range(len(adcs))]
             ts_max = np.argmax(adcs,axis=0)*self.SAMPLING_PERIOD + timestamp
             ts_min = np.argmin(adcs,axis=0)*self.SAMPLING_PERIOD + timestamp
 
@@ -507,7 +557,6 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
                                             adc_rms=adc_rms[iframe],
                                             adc_max=adc_max[iframe],
                                             adc_min=adc_min[iframe],
-                                            #adc_mode=adc_mode[iframe],
                                             adc_median=adc_median[iframe],
                                             timestamp_max_dts=ts_max[iframe],
                                             timestamp_min_dts=ts_min[iframe]) for iframe in range(n_frames) ]
