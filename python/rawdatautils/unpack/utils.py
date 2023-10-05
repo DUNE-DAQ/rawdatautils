@@ -517,6 +517,7 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
     def get_det_data_all(self,frag):
         frh = frag.get_header()
         trigger_number = frh.trigger_number
+        wvfm_data = None
 
         get_ana_data = (self.ana_data_prescale is not None and (trigger_number % self.ana_data_prescale)==0)
         get_wvfm_data = (self.wvfm_data_prescale is not None and (trigger_number % self.wvfm_data_prescale)==0)
@@ -534,14 +535,14 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
             return None, None
     
         if get_ana_data:
-            print(adcs)
-            adc_mean = np.mean(adcs,axis=0)
-            adc_rms = np.std(adcs,axis=0)
-            adc_max = np.max(adcs,axis=0)
-            adc_min = np.min(adcs,axis=0)
-            adc_median = np.median(adcs,axis=0)
-            ts_max = np.argmax(adcs,axis=0)*self.SAMPLING_PERIOD + timestamp
-            ts_min = np.argmin(adcs,axis=0)*self.SAMPLING_PERIOD + timestamp
+            ax = 1
+            adc_mean = np.mean(adcs,axis=ax)
+            adc_rms = np.std(adcs,axis=ax)
+            adc_max = np.max(adcs,axis=ax)
+            adc_min = np.min(adcs,axis=ax)
+            adc_median = np.median(adcs,axis=ax)
+            ts_max = np.argmax(adcs,axis=ax)*self.SAMPLING_PERIOD + timestamp
+            ts_min = np.argmin(adcs,axis=ax)*self.SAMPLING_PERIOD + timestamp
 
             ana_data = [ DAPHNEAnalysisData(run=frh.run_number,
                                             trigger=frh.trigger_number,

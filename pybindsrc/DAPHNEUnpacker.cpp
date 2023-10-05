@@ -116,7 +116,7 @@ py::array_t<uint16_t> np_array_adc_data(void* data, int nframes){
     //for (size_t j=0; j<channels_per_daphne; ++j)
     
   }
-  //ret.resize({nframes, channels_per_daphne});
+  ret.resize({nframes, adcs_per_channel});
 
   return ret;
 }
@@ -153,7 +153,7 @@ py::array_t<uint16_t> np_array_adc_stream_data(void* data, int nframes){
 
 py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes){
 
-  const auto adcs_per_channel     = fddetdataformats::DAPHNEFrame::s_num_adcs;
+  //const auto adcs_per_channel     = fddetdataformats::DAPHNEFrame::s_num_adcs;
 
   py::array_t<uint64_t> ret(nframes);
   auto ptr = static_cast<uint64_t*>(ret.request().ptr);
