@@ -17,7 +17,10 @@ def dts_to_datetime(dts_timestamp):
 
 def sparsify_array_diff_locs_and_vals(arr):
     arr_diff_locs = np.insert(np.where(arr[1:]!=arr[:-1])[0],0,-1)+1
-    return arr_diff_locs,arr[arr_diff_locs],len(arr)
+    if len(arr)>0:
+        return arr_diff_locs,arr[arr_diff_locs],len(arr)
+    else:
+        return [], [], 0
 
 def desparsify_array_diff_locs_and_vals(arr_diff_locs,arr_diff_vals,arr_size):
     arr = np.empty(arrsize)
