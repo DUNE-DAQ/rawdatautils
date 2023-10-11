@@ -361,7 +361,7 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
         _, crate, slot, stream = self.get_det_crate_slot_stream(frag)
         channels = [ self.channel_map.get_offline_channel_from_crate_slot_stream_chan(crate, slot, stream, c) for c in range(self.N_CHANNELS_PER_FRAME) ]
         planes = [ self.channel_map.get_plane_from_offline_channel(uc) for uc in channels ]
-        apas = [ self.channel_map.get_apa_from_offline_channel(uc) for uc in channels ]
+        apas = [ self.channel_map.get_tpc_element_from_offline_channel(uc) for uc in channels ]
         wib_chans = range(self.N_CHANNELS_PER_FRAME)
         
         if get_ana_data:
