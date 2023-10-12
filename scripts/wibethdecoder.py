@@ -6,7 +6,7 @@ import daqdataformats
 import detdataformats
 import fddetdataformats
 from rawdatautils.unpack.wibeth import *
-#from rawdatautils.utilities.wibeth import *
+from rawdatautils.utilities.wibeth import *
 import detchannelmaps
 
 import click
