@@ -59,10 +59,16 @@ def main(filename, nrecords, nskip, channel_map, print_headers, print_adc_stats,
         wib_geo_ids = h5_file.get_geo_ids_for_subdetector(r,detdataformats.DetID.string_to_subdetector(det))
 
         for gid in wib_geo_ids:
-            geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
-            subdet = detdataformats.DetID.Subdetector(geo_info.det_id)
+            #geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
+            det_link = 0xffff & (gid >> 48);
+            det_slot = 0xffff & (gid >> 32);
+            det_crate = 0xffff & (gid >> 16);
+            det_id = 0xffff & gid;
+            subdet = detdataformats.DetID.Subdetector(det_id)
             det_name = detdataformats.DetID.subdetector_to_string(subdet)
-            print(f'\tProcessing subdetector {det_name}, crate {geo_info.det_crate}, slot {geo_info.det_slot}, link {geo_info.det_link}')
+            
+            if not quiet:
+                print(f'\tProcessing subdetector {det_name}, crate {det_crate}, slot {det_slot}, link {det_link}')
 
             frag = h5_file.get_frag(r,gid)
             frag_hdr = frag.get_header()
