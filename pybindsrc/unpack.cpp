@@ -17,22 +17,22 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <fmt/core.h>
+// #include <fmt/core.h>
 
 namespace py = pybind11;
 
 namespace dunedaq {
 namespace rawdatautils {
 
-void print_hex_fragment(daqdataformats::Fragment const& frag) {
-  uint64_t* data = static_cast<uint64_t*>(frag.get_data());
-  size_t data_size = (frag.get_size() - sizeof(daqdataformats::FragmentHeader))/8;
+// void print_hex_fragment(daqdataformats::Fragment const& frag) {
+//   uint64_t* data = static_cast<uint64_t*>(frag.get_data());
+//   size_t data_size = (frag.get_size() - sizeof(daqdataformats::FragmentHeader))/8;
 
-  for ( size_t i(0); i<data_size; ++i) {
-    fmt::print("{:06d} 0x{:016x}\n", i, data[i]);
-  }
+//   for ( size_t i(0); i<data_size; ++i) {
+//     fmt::print("{:06d} 0x{:016x}\n", i, data[i]);
+//   }
 
-}
+// }
 
 
 namespace wib {
@@ -94,7 +94,7 @@ namespace python {
 void
 register_unpack(py::module& m) {
 
-  m.def("print_hex_fragment", &print_hex_fragment);
+  // m.def("print_hex_fragment", &print_hex_fragment);
 
   py::module_ wib_module = m.def_submodule("wib");
   wib_module.def("np_array_adc", &wib::np_array_adc);
