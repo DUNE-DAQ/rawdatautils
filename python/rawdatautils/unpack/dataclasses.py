@@ -23,7 +23,7 @@ def sparsify_array_diff_locs_and_vals(arr):
         return [], [], 0
 
 def desparsify_array_diff_locs_and_vals(arr_diff_locs,arr_diff_vals,arr_size):
-    arr = np.empty(arrsize)
+    arr = np.empty(arr_size)
     for i in range(len(arr_diff_locs)):
         i_this = arr_diff_locs[i]
         i_next = -1 if (i+1)==len(arr_diff_locs) else arr_diff_locs[i+1]
