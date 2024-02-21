@@ -23,11 +23,12 @@ def sparsify_array_diff_locs_and_vals(arr):
         return [], [], 0
 
 def desparsify_array_diff_locs_and_vals(arr_diff_locs,arr_diff_vals,arr_size):
-    arr = np.empty(arr_size)
+    arr = np.empty(arr_size,dtype=np.uint)
     for i in range(len(arr_diff_locs)):
-        i_this = arr_diff_locs[i]
-        i_next = -1 if (i+1)==len(arr_diff_locs) else arr_diff_locs[i+1]
-        arr[i_this:i_next] = arr_diff_vals[i]
+        if (i+1)==len(arr_diff_locs):
+            arr[arr_diff_locs[i]:] = arr_diff_vals[i]
+        else:
+            arr[arr_diff_locs[i]:arr_diff_locs[i+1]] = arr_diff_vals[i]
     return arr
 
 def sparsify_array_diff_of_diff_locs_and_vals(arr):
@@ -38,7 +39,7 @@ def sparsify_array_diff_of_diff_locs_and_vals(arr):
 
 def desparsify_array_diff_of_diff_locs_and_vals(arr_first,arr_diff_locs,arr_diff_vals,arr_size):
     arr_diff = desparsify_array_diff_locs_and_vals(arr_diff_locs,arr_diff_vals,arr_size-1)
-    arr = np.concatenate(([0],arr_diff)).cumsum() + arr_first
+    arr = np.concatenate((np.array([0],dtype=np.uint),arr_diff)).cumsum() + arr_first
     return arr
 
 @dataclass(order=True)
