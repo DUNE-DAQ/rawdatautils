@@ -16,30 +16,43 @@ def dts_to_datetime(dts_timestamp):
 ## Sparsification and desparsifications for arrays
 
 def sparsify_array_diff_locs_and_vals(arr):
-    arr_diff_locs = np.insert(np.where(arr[1:]!=arr[:-1])[0],0,-1)+1
-    if len(arr)>0:
-        return arr_diff_locs,arr[arr_diff_locs],len(arr)
+    # Find indices where the value changes compared to the previous value, adjusting the first index to start from 0
+    change_locations = np.insert(np.where(arr[1:] != arr[:-1])[0], 0, -1) + 1
+    # Check if the array is not empty
+    if len(arr) > 0:
+        # Return locations of changes, values at these locations, and the length of the array
+        return change_locations, arr[change_locations], len(arr)
     else:
+        # Return empty results for an empty array
         return [], [], 0
 
-def desparsify_array_diff_locs_and_vals(arr_diff_locs,arr_diff_vals,arr_size):
-    arr = np.empty(arr_size,dtype=np.uint)
-    for i in range(len(arr_diff_locs)):
-        if (i+1)==len(arr_diff_locs):
-            arr[arr_diff_locs[i]:] = arr_diff_vals[i]
+def desparsify_array_diff_locs_and_vals(change_locations, change_values, arr_size):
+    # Create an empty array of the original size
+    reconstructed_arr = np.empty(arr_size, dtype=np.uint)
+    # Loop through each change location
+    for i in range(len(change_locations)):
+        # Apply the change value from the current change location to the end or next change location
+        if (i + 1) == len(change_locations):
+            reconstructed_arr[change_locations[i]:] = change_values[i]
         else:
-            arr[arr_diff_locs[i]:arr_diff_locs[i+1]] = arr_diff_vals[i]
-    return arr
+            reconstructed_arr[change_locations[i]:change_locations[i + 1]] = change_values[i]
+    return reconstructed_arr
 
 def sparsify_array_diff_of_diff_locs_and_vals(arr):
+    # Store the first value of the array for later reconstruction
     arr_first = arr[0]
+    # Compute the difference of consecutive elements
     arr_diff = np.diff(arr)
-    arr_diff_locs, arr_diff_vals, _ = sparsify_array_diff_locs_and_vals(arr)
-    return arr_first,arr_diff_locs,arr_diff_vals,len(arr)
+    # Use sparsify function to find locations and values of changes in the diff array
+    arr_diff_locs, arr_diff_vals, _ = sparsify_array_diff_locs_and_vals(arr_diff)
+    # Return the first value, change locations, change values, and array size for reconstruction
+    return arr_first, arr_diff_locs, arr_diff_vals, len(arr)
 
-def desparsify_array_diff_of_diff_locs_and_vals(arr_first,arr_diff_locs,arr_diff_vals,arr_size):
-    arr_diff = desparsify_array_diff_locs_and_vals(arr_diff_locs,arr_diff_vals,arr_size-1)
-    arr = np.concatenate((np.array([0],dtype=np.uint),arr_diff)).cumsum() + arr_first
+def desparsify_array_diff_of_diff_locs_and_vals(arr_first, change_locations, change_values, arr_size):
+    # Reconstruct the differential array from sparse representation
+    arr_diff = desparsify_array_diff_locs_and_vals(change_locations, change_values, arr_size - 1)
+    # Reconstruct the original array by cumulatively summing the differences and adding the first value
+    arr = np.concatenate((np.array([0], dtype=np.uint), arr_diff)).cumsum() + arr_first
     return arr
 
 @dataclass(order=True)
