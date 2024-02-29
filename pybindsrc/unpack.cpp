@@ -11,6 +11,7 @@
 #include "fddetdataformats/DAPHNEFrame.hpp"
 #include "fddetdataformats/WIBEthFrame.hpp"
 #include "fddetdataformats/TDE16Frame.hpp"
+#include "fddetdataformats/CRTFixedSizeFrame.hpp"
 #include "daqdataformats/Fragment.hpp"
 
 #include <pybind11/numpy.h>
@@ -88,6 +89,18 @@ namespace tde {
 
 }
 
+namespace crt {
+  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
+  extern py::array_t<int16_t> np_array_adc(daqdataformats::Fragment& frag);
+  extern py::array_t<int16_t> np_array_adc_data(void* data, int nframes);
+  extern py::array_t<uint8_t> np_array_channel(daqdataformats::Fragment& frag);
+  extern py::array_t<uint8_t> np_array_channel_data(void* data, int nframes);
+  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
+  extern py::array_t<uint16_t> np_array_modules(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_modules_data(void* data, int nframes);
+}
+
 namespace unpack {
 namespace python {
 
@@ -137,7 +150,17 @@ register_unpack(py::module& m) {
   tde_module.def("get_n_frames", &tde::get_n_frames);
   tde_module.def("np_array_timestamp_data", &tde::np_array_timestamp_data);
   tde_module.def("np_array_channel_data", &tde::np_array_channel_data);
-  
+
+  py::module_ crt_module = m.def_submodule("crt");
+  crt_module.def("get_n_frames", &crt::get_n_frames);
+  crt_module.def("np_array_modules", &crt::np_array_modules);
+  crt_module.def("np_array_adc", &crt::np_array_adc);
+  crt_module.def("np_array_channel", &crt::np_array_channel);
+  crt_module.def("np_array_timestamp", &crt::np_array_timestamp);
+  crt_module.def("np_array_modules_data", &crt::np_array_modules_data);
+  crt_module.def("np_array_adc_data", &crt::np_array_adc_data);
+  crt_module.def("np_array_timestamp_data", &crt::np_array_timestamp_data);  
+  crt_module.def("np_array_channel_data", &crt::np_array_channel_data);
 }
 
 } // namespace python
