@@ -11,7 +11,7 @@
 #include "fddetdataformats/DAPHNEFrame.hpp"
 #include "fddetdataformats/WIBEthFrame.hpp"
 #include "fddetdataformats/TDE16Frame.hpp"
-#include "fddetdataformats/CRTFixedSizeFrame.hpp"
+#include "fddetdataformats/CRTFrame.hpp"
 #include "daqdataformats/Fragment.hpp"
 
 #include <pybind11/numpy.h>
