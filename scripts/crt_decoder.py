@@ -138,17 +138,17 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
             for fr_num in range(n_frames):
                 scanned_channels += 1
                 main_line = f"{det_crate:^10} {det_slot:^10} {det_link:^10} {modules[fr_num]:^10} "
-                ch_lines = []
-                adc_lines = []
+                ch_line = ""
+                adc_line = ""
                 if adc_stats:
                     for ch in channels[fr_num]:
-                        if(adcs[fr_num][channels[fr_num].tolist().index(ch)] != 0):
-                            ch_lines.append(f"{ch:^5} ")
+                        if(ch != 0):
+                            ch_line += f"{ch:^5}"
                         if(ch>63):
                             print("Error, channel out of expected range!")
                     for adc_val in adcs[fr_num]:
                         if(adc_val != 0):
-                            adc_lines.append(f"{adc_val:^5} ")
+                            adc_line += f"{adc_val:^5}"
                     if fragType == FragmentType.kCRT.value:
                         if np.std(adcs[:]) > 10:
                             active_channels += 1
@@ -168,8 +168,8 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
                     main_line += ts_status
 
                 print(main_line)
-                print(ch_lines)
-                print(adc_lines)
+                print(ch_line)
+                print(adc_line)
 
             #if tslot == geo_info.det_slot:
             #    continue
