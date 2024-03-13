@@ -481,6 +481,7 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
                                                    sequence=frh.sequence_number,
                                                    src_id=frh.element_id.id,
                                                    channel=channels[i_ch],
+                                                   daphne_chan=channels[i_ch],
                                                    adcs=adcs[:,i_ch],
                                                    timestamps=timestamps,
                                                    fft_mag=ffts[:,i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
