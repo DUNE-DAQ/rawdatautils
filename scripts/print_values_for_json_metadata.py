@@ -30,7 +30,7 @@ def main(filename):
         attr_value = "cosmics"
     print(f'{attr_name} {attr_value}')
 
-    attr_name = "run_is_for_test_purposes"
+    attr_name = "run_was_for_test_purposes"
     try:
         attr_value = h5_file.get_attribute(attr_name)
     except RuntimeError:
