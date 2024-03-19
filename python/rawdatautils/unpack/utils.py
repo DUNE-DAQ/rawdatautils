@@ -182,8 +182,8 @@ class DetectorFragmentUnpacker(FragmentUnpacker):
 
     def __init__(self,ana_data_prescale=1,wvfm_data_prescale=None):
         super().__init__()
-        self.ana_data_prescale = ana_data_prescale
-        self.wvfm_data_prescale = wvfm_data_prescale
+        self.ana_data_prescale = None if not ana_data_prescale else int(ana_data_prescale)
+        self.wvfm_data_prescale = None if not wvfm_data_prescale else int(wvfm_data_prescale)
     
     def get_daq_header_version(self,frag):
         return None
@@ -233,9 +233,9 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
     N_CHANNELS_PER_FRAME = 64
     
     def __init__(self,channel_map,ana_data_prescale=1,wvfm_data_prescale=None):
-        super().__init__(ana_data_prescale=ana_data_prescale,wvfm_data_prescale=wvfm_data_prescale)
+        super().__init__(ana_data_prescale=ana_data_prescale, wvfm_data_prescale=wvfm_data_prescale)
         self.channel_map = detchannelmaps.make_map(channel_map)
-        
+
     def get_n_obj(self,frag):
         return self.unpacker.get_n_frames(frag)
 
