@@ -11,11 +11,13 @@
 
 #include <cstdint>
 #include <pybind11/numpy.h>
-// #include <fmt/core.h>
 // #include <iostream>
 
 namespace py = pybind11;
-namespace dunedaq::rawdatautils::wibeth {
+
+namespace dunedaq {
+namespace rawdatautils {
+namespace wibeth {
 
 /**
  * @brief Gets number of WIBEthFrames in a fragment
@@ -101,4 +103,6 @@ py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag){
 }
 
 
-} // namespace dunedaq::rawdatautils::wibeth // NOLINT
+} // wibeth
+} // rawdatautils
+} // dunedaq

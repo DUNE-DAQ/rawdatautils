@@ -6,33 +6,34 @@
  * received with this code.
  */
 
-#include "fddetdataformats/WIBFrame.hpp"
-#include "fddetdataformats/WIB2Frame.hpp"
-#include "fddetdataformats/DAPHNEFrame.hpp"
-#include "fddetdataformats/WIBEthFrame.hpp"
-#include "fddetdataformats/TDE16Frame.hpp"
+// #include "fddetdataformats/WIBFrame.hpp"
+// #include "fddetdataformats/WIB2Frame.hpp"
+// #include "fddetdataformats/DAPHNEFrame.hpp"
+// #include "fddetdataformats/WIBEthFrame.hpp"
+// #include "fddetdataformats/TDE16Frame.hpp"
 #include "daqdataformats/Fragment.hpp"
+#include "trgdataformats/TriggerPrimitive.hpp"
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <fmt/core.h>
+// #include <fmt/core.h>
 
 namespace py = pybind11;
 
 namespace dunedaq {
 namespace rawdatautils {
 
-void print_hex_fragment(daqdataformats::Fragment const& frag) {
-  uint64_t* data = static_cast<uint64_t*>(frag.get_data());
-  size_t data_size = (frag.get_size() - sizeof(daqdataformats::FragmentHeader))/8;
+// void print_hex_fragment(daqdataformats::Fragment const& frag) {
+//   uint64_t* data = static_cast<uint64_t*>(frag.get_data());
+//   size_t data_size = (frag.get_size() - sizeof(daqdataformats::FragmentHeader))/8;
 
-  for ( size_t i(0); i<data_size; ++i) {
-    fmt::print("{:06d} 0x{:016x}\n", i, data[i]);
-  }
+//   for ( size_t i(0); i<data_size; ++i) {
+//     fmt::print("{:06d} 0x{:016x}\n", i, data[i]);
+//   }
 
-}
+// }
 
 
 namespace wib {
@@ -42,6 +43,7 @@ namespace wib {
   extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
 }
 
+
 namespace wib2 {
   extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
   extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag);
@@ -49,6 +51,7 @@ namespace wib2 {
   extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
   extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
 }
+
 
 namespace wibeth {
   extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
@@ -75,8 +78,6 @@ namespace daphne {
   extern py::array_t<uint64_t> np_array_timestamp_stream_data(void* data, int nframes);
   extern py::array_t<uint8_t> np_array_channels_stream(daqdataformats::Fragment& frag);
   extern py::array_t<uint8_t> np_array_channels_stream_data(void* data, int nframes);
-  
-
 }
 
 
@@ -88,13 +89,19 @@ namespace tde {
 
 }
 
+namespace triggerprimitive {
+  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
+  extern py::array_t<trgdataformats::TriggerPrimitive> get_tp_array(daqdataformats::Fragment const& frag);
+
+}
+
 namespace unpack {
 namespace python {
 
 void
 register_unpack(py::module& m) {
 
-  m.def("print_hex_fragment", &print_hex_fragment);
+  // m.def("print_hex_fragment", &print_hex_fragment);
 
   py::module_ wib_module = m.def_submodule("wib");
   wib_module.def("np_array_adc", &wib::np_array_adc);
@@ -138,6 +145,13 @@ register_unpack(py::module& m) {
   tde_module.def("np_array_timestamp_data", &tde::np_array_timestamp_data);
   tde_module.def("np_array_channel_data", &tde::np_array_channel_data);
   
+  PYBIND11_NUMPY_DTYPE(trgdataformats::TriggerPrimitive, version, time_start, time_peak, time_over_threshold, channel, adc_integral, adc_peak, detid, type, algorithm, flag);
+
+  py::module_ tp_module = m.def_submodule("triggerprimitive");
+  tp_module.def("get_n_frames", &triggerprimitive::get_n_frames);
+  tp_module.def("get_tp_array", &triggerprimitive::get_tp_array);
+
+
 }
 
 } // namespace python
