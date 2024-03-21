@@ -116,8 +116,8 @@ class FragmentUnpacker(Unpacker):
 
         if(self.is_trigger_unpacker):
             trgh, trgd = self.get_trg_data(in_data)
-            if trgh is not None: data_dict[f"trgh_{type_string}"] = trgh
-            if trg is not None: data_dict[f"trgd_{type_string}"] = trgd
+            if trgh is not None: data_dict["trgh"] = trgh
+            if trg is not None: data_dict["trgd"] = trgd
 
         if(self.is_detector_unpacker):
             daqh, deth, detd, detw = self.get_det_data(in_data)
@@ -361,7 +361,7 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
         _, crate, slot, stream = self.get_det_crate_slot_stream(frag)
         channels = [ self.channel_map.get_offline_channel_from_crate_slot_stream_chan(crate, slot, stream, c) for c in range(self.N_CHANNELS_PER_FRAME) ]
         planes = [ self.channel_map.get_plane_from_offline_channel(uc) for uc in channels ]
-        apas = [ self.channel_map.get_apa_from_offline_channel(uc) for uc in channels ]
+        apas = [ self.channel_map.get_tpc_element_from_offline_channel(uc) for uc in channels ]
         wib_chans = range(self.N_CHANNELS_PER_FRAME)
         
         if get_ana_data:
@@ -428,15 +428,15 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
     def get_det_header_data(self,frag):
         frh = frag.get_header()
         dh = self.frame_obj(frag.get_data()).get_header()
-        ts_diff_vals, ts_diff_counts = np.unique(np.diff(self.unpacker.np_array_timestamp(frag)),return_counts=True)
+        ts_diffs_vals, ts_diffs_counts = np.unique(np.diff( np.array(self.unpacker.np_array_timestamp_stream(frag), dtype=np.int64)), return_counts=True)
         return [ DAPHNEStreamHeaderData(run=frh.run_number,
                                         trigger=frh.trigger_number,
                                         sequence=frh.sequence_number,
                                         src_id=frh.element_id.id,
                                         n_channels=self.N_CHANNELS_PER_FRAME,
                                         sampling_period=self.SAMPLING_PERIOD,
-                                        ts_diffs_vals=self.ts_diff_vals,
-                                        ts_diff_counts=self.ts_diff_counts) ]
+                                        ts_diffs_vals=ts_diffs_vals,
+                                        ts_diffs_counts=ts_diffs_counts) ]
 
     def get_det_data_all(self,frag):
         frh = frag.get_header()
@@ -517,6 +517,7 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
     def get_det_data_all(self,frag):
         frh = frag.get_header()
         trigger_number = frh.trigger_number
+        wvfm_data = None
 
         get_ana_data = (self.ana_data_prescale is not None and (trigger_number % self.ana_data_prescale)==0)
         get_wvfm_data = (self.wvfm_data_prescale is not None and (trigger_number % self.wvfm_data_prescale)==0)
@@ -526,18 +527,22 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
 
         n_frames = self.get_n_obj(frag)
         adcs = self.unpacker.np_array_adc(frag)
+
         daphne_headers = [ self.frame_obj(frag.get_data(iframe*self.frame_obj.sizeof())).get_header() for iframe in range(n_frames) ]
         timestamp = self.unpacker.np_array_timestamp(frag)
 
+        if (len(adcs)) == 0:
+            return None, None
+    
         if get_ana_data:
-
-            adc_mean = np.mean(adcs,axis=0)
-            adc_rms = np.std(adcs,axis=0)
-            adc_max = np.max(adcs,axis=0)
-            adc_min = np.min(adcs,axis=0)
-            adc_median = np.median(adcs,axis=0)
-            ts_max = np.argmax(adcs,axis=0)*self.SAMPLING_PERIOD + timestamp
-            ts_min = np.argmin(adcs,axis=0)*self.SAMPLING_PERIOD + timestamp
+            ax = 1
+            adc_mean = np.mean(adcs,axis=ax)
+            adc_rms = np.std(adcs,axis=ax)
+            adc_max = np.max(adcs,axis=ax)
+            adc_min = np.min(adcs,axis=ax)
+            adc_median = np.median(adcs,axis=ax)
+            ts_max = np.argmax(adcs,axis=ax)*self.SAMPLING_PERIOD + timestamp
+            ts_min = np.argmin(adcs,axis=ax)*self.SAMPLING_PERIOD + timestamp
 
             ana_data = [ DAPHNEAnalysisData(run=frh.run_number,
                                             trigger=frh.trigger_number,
