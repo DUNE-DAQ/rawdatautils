@@ -10,12 +10,12 @@ import click
 import time
 import numpy as np
 
-from rawdatautils.unpack.dataclasses import *
+from rawdatautils.unpack.dataclasses import TriggerPrimitiveData
 
 @click.command()
 @click.argument('filenames', nargs=-1, type=click.Path(exists=True))
-@click.option('--nrecords', '-n', default=-1, help='How many Trigger Records to process (default: all)')
-@click.option('--nskip', default=0, help='How many Trigger Records to skip (default: 0)')
+@click.option('--nrecords', '-n', default=-1, help='How many records to process (default: all)')
+@click.option('--nskip', default=0, help='How many records to skip (default: 0)')
 
 def main(filenames, nrecords, nskip):
 
@@ -44,6 +44,7 @@ def main(filenames, nrecords, nskip):
         
         with h5py.File(h5_file.get_file_name(), 'r') as f:
             record_type = f.attrs["record_type"]
+            print(f'Record type is {record_type}')
         
         for r in records_to_process:
 
