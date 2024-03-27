@@ -12,6 +12,7 @@ import detchannelmaps
 from rawdatautils.unpack.dataclasses import *
 import rawdatautils.unpack.wibeth
 import rawdatautils.unpack.daphne
+import rawdatautils.unpack.crt
 import h5py
 
 #analysis imports
