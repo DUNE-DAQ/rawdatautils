@@ -10,8 +10,11 @@ import fddetdataformats
 import trgdataformats
 import detchannelmaps
 
+def dts_to_seconds(dts):
+     return dts*16 //1e9
+
 def dts_to_datetime(dts_timestamp):
-    return datetime.fromtimestamp(dts_timestamp*16 // 1e9, tz=pytz.timezone("UTC"))
+    return datetime.fromtimestamp(dts_to_seconds(dts_timestamp), tz=pytz.timezone("UTC"))
 
 ## Sparsification and desparsifications for arrays
 

@@ -123,51 +123,34 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
             frag     = h5_file.get_frag(r,gid)
             geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
             fragType = frag.get_header().fragment_type
-            #print(fragType)
-
-            if fragType == FragmentType.kDAPHNEStream.value:
-
-                timestamps = np_array_timestamp_stream(frag)
-                adcs       = np_array_adc_stream(frag)
-                channels   = np_array_channels_stream(frag)[0]
-                n_channels = len(np.unique(channels))
-            
-            elif fragType == FragmentType.kDAPHNE.value or fragType == '3':
+            if fragType == FragmentType.kDAPHNE.value:
             
                 timestamps = np_array_timestamp(frag)
                 adcs       = np_array_adc(frag)
                 channels   = np_array_channels(frag)
                 n_channels = len(np.unique(channels))
-                #print(n_channels)
+            elif fragType == 13:
 
-            #elif fragType == 13:
-            #elif fragType == FragmentType.kDAPHNEStream.value:
-
-            #    timestamps = np_array_timestamp_stream(frag)
-            #    adcs       = np_array_adc_stream(frag)
-            #    channels   = np_array_channels_stream(frag)[0]
-            #    n_channels = len(np.unique(channels))
+                timestamps = np_array_timestamp_stream(frag)
+                adcs       = np_array_adc_stream(frag)
+                channels   = np_array_channels_stream(frag)[0]
+                n_channels = len(np.unique(channels))
 
             trigger_stamps.append(frag.get_trigger_timestamp())     
 
             ts_status = f"{bcolors.FAIL}{'Problems':^20}{bcolors.ENDC}"
 
-            if n_channels == 0:
-                line = f"{geo_info.det_crate:^10} {geo_info.det_slot:^10} {geo_info.det_link:^10} {dmodes[fragType] :^15} {'Empty fragment':^40} "
-                print(line)
-
             for ch_num in range(n_channels):
                 scanned_channels += 1
                 line = f"{geo_info.det_crate:^10} {geo_info.det_slot:^10} {geo_info.det_link:^10} {dmodes[fragType] :^15} {channels[ch_num]:^10} "
 
+                if np.mean(adcs[:]) > 10:
+                    active_channels += 1
+                
                 if adc_stats:
                     if fragType == FragmentType.kDAPHNE.value:
-                        if np.std(adcs[:]) > 10:
-                            active_channels += 1
                         line += f"{np.mean(adcs[:]):^10.2f}  {np.std(adcs[:]):^10.2f} "
                     else:
-                        if np.std(adcs[:, ch_num]) > 10:
-                            active_channels += 1
                         line += f"{np.mean(adcs[:, ch_num]):^10.2f}  {np.std(adcs[:, ch_num]):^10.2f} "
 
                 if check_ts:
