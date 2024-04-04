@@ -21,6 +21,20 @@ def main(filename):
     attr_value = h5_file.get_attribute(attr_name)
     print(f'{attr_name} {attr_value}')
 
+    attr_name = "offline_data_stream"
+    try:
+        attr_value = h5_file.get_attribute(attr_name)
+    except RuntimeError:
+        attr_value = "cosmics"
+    print(f'{attr_name} {attr_value}')
+
+    attr_name = "run_was_for_test_purposes"
+    try:
+        attr_value = h5_file.get_attribute(attr_name)
+    except RuntimeError:
+        attr_value = "false"
+    print(f'{attr_name} {attr_value}')
+
     records = h5_file.get_all_record_ids()
 
     print('=== start of record list')
