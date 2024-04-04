@@ -32,7 +32,7 @@ def main(filename):
     try:
         attr_value = h5_file.get_attribute(attr_name)
     except RuntimeError:
-        attr_value = "true"
+        attr_value = "false"
     print(f'{attr_name} {attr_value}')
 
     records = h5_file.get_all_record_ids()
