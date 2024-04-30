@@ -7,6 +7,7 @@ find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 find_package(daqdataformats REQUIRED)
 find_package(detdataformats REQUIRED)
 find_package(fddetdataformats REQUIRED)
+find_package(detchannelmaps REQUIRED)
 
 daq_setup_environment()
 
