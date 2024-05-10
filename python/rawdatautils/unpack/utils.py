@@ -117,8 +117,9 @@ class FragmentUnpacker(Unpacker):
 
         if(self.is_trigger_unpacker):
             trgh, trgd = self.get_trg_data(in_data)
-            if trgh is not None: data_dict["trgh"] = trgh
-            if trg is not None: data_dict["trgd"] = trgd
+            if trgh is not None: data_dict[f"trgh_{type_string}"] = trgh
+            if trgd[0] is not None: data_dict[f"trgd_{type_string}"] = trgd[0]
+            if trgd[1] is not None: data_dict[f"trgd_{type_string}_inputs"] = trgd[1]
 
         if(self.is_detector_unpacker):
             daqh, deth, detd, detw = self.get_det_data(in_data)
@@ -132,9 +133,6 @@ class FragmentUnpacker(Unpacker):
 class TriggerDataUnpacker(FragmentUnpacker):
     
     is_trigger_unpacker = True
-
-    def get_trg_data_version(self,frag):
-        return None
 
     def get_trg_data(self,frag):
         return self.get_trg_header_data(frag),self.get_trg_obj_data(frag)
@@ -152,15 +150,25 @@ class TriggerDataUnpacker(FragmentUnpacker):
 class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
 
     trg_obj = trgdataformats.TriggerPrimitive
-        
+
+    def __init__(self,channel_map):
+        super().__init__()
+        self.channel_map = detchannelmaps.make_map(channel_map)
+
     def get_n_obj(self,frag):
-        return frag.get_data_size()/self.trg_obj.sizeof()
-    
+        return int(frag.get_data_size()/self.trg_obj.sizeof())
+
+    def get_trg_data_version(self,frag):
+        if self.get_n_obj(frag)==0:
+            return None
+        trig_obj = self.trg_obj(frag.get_data())
+        return trig_obj.version
+
     def get_trg_obj_data(self,frag):
         frh = frag.get_header()
         tpd_list = []
         for i_tp in range(self.get_n_obj(frag)):
-            tp = self.trg_obj(frag.get_data(i*self.trg_obj.sizeof()))
+            tp = self.trg_obj(frag.get_data(i_tp*self.trg_obj.sizeof()))
             tpd_list.append( TriggerPrimitiveData(run=frh.run_number,
                                                   trigger=frh.trigger_number,
                                                   sequence=frh.sequence_number,
@@ -169,12 +177,163 @@ class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
                                                   time_peak=tp.time_peak,
                                                   time_over_threshold=tp.time_over_threshold,
                                                   channel=tp.channel,
+                                                  plane=self.channel_map.get_plane_from_offline_channel(tp.channel),
+                                                  apa=self.channel_map.get_tpc_element_from_offline_channel(tp.channel),
                                                   adc_integral=tp.adc_integral,
                                                   adc_peak=tp.adc_peak,
                                                   detid=tp.detid,
                                                   tp_type=tp.type,
                                                   algorithm=tp.algorithm,
-                                                  flag=tp.flag) )
+                                                  flag=tp.flag,
+                                                  id_ta=-1) )
+        return tpd_list, None
+
+class TriggerActivityUnpacker(TriggerDataUnpacker):
+
+    trg_obj = trgdataformats.TriggerActivity
+
+    def __init__(self,channel_map):
+        super().__init__()
+        self.channel_map = detchannelmaps.make_map(channel_map)
+
+    def get_n_obj(self,frag):
+        frag_data_size = frag.get_data_size()
+        size_so_far = 0
+        n_tobjs = 0
+        while size_so_far < frag_data_size:
+            tobj = self.trg_obj(frag.get_data(size_so_far))
+            n_tobjs = n_tobjs + 1
+            size_so_far = size_so_far + tobj.sizeof()
+        return n_tobjs
+
+    def get_trg_data_version(self,frag):
+        if self.get_n_obj(frag)==0:
+            return None
+        trig_obj = self.trg_obj(frag.get_data())
+        return trig_obj.data.version
+
+    def get_trg_obj_data(self,frag):
+        frh = frag.get_header()
+        ta_list = []
+        tpd_list = []
+        size_so_far = 0
+        for i_ta in range(self.get_n_obj(frag)):
+            ta= self.trg_obj(frag.get_data(size_so_far))
+            size_so_far = size_so_far + ta.sizeof()
+            ta_list.append( TriggerActivityData(run=frh.run_number,
+                                                trigger=frh.trigger_number,
+                                                sequence=frh.sequence_number,
+                                                src_id=frh.element_id.id,
+                                                id=i_ta,
+                                                time_start=ta.data.time_start,
+                                                time_end=ta.data.time_end,
+                                                time_peak=ta.data.time_peak,
+                                                time_activity=ta.data.time_activity,
+                                                channel_start=ta.data.channel_start,
+                                                channel_end=ta.data.channel_end,
+                                                channel_peak=ta.data.channel_peak,
+                                                plane=self.channel_map.get_plane_from_offline_channel(ta.data.channel_peak),
+                                                apa=self.channel_map.get_tpc_element_from_offline_channel(ta.data.channel_peak),
+                                                adc_integral=ta.data.adc_integral,
+                                                adc_peak=ta.data.adc_peak,
+                                                detid=ta.data.detid,
+                                                ta_type=ta.data.type,
+                                                algorithm=ta.data.algorithm,
+                                                n_tps=len(ta),
+                                                id_tc=-1) )
+            for i_tp in range(len(ta)):
+                tp = ta[i_tp]
+                tpd_list.append( TriggerPrimitiveData(run=frh.run_number,
+                                                      trigger=frh.trigger_number,
+                                                      sequence=frh.sequence_number,
+                                                      src_id=frh.element_id.id,
+                                                      time_start=tp.time_start,
+                                                      time_peak=tp.time_peak,
+                                                      time_over_threshold=tp.time_over_threshold,
+                                                      channel=tp.channel,
+                                                      plane=self.channel_map.get_plane_from_offline_channel(tp.channel),
+                                                      apa=self.channel_map.get_tpc_element_from_offline_channel(tp.channel),
+                                                      adc_integral=tp.adc_integral,
+                                                      adc_peak=tp.adc_peak,
+                                                      detid=tp.detid,
+                                                      tp_type=tp.type,
+                                                      algorithm=tp.algorithm,
+                                                      flag=tp.flag,
+                                                      id_ta=i_ta) )
+        if len(tpd_list)==0:
+            tpd_list=None
+        return ta_list, tpd_list
+
+class TriggerCandidateUnpacker(TriggerDataUnpacker):
+
+    trg_obj = trgdataformats.TriggerCandidate
+
+    def __init__(self,channel_map):
+        super().__init__()
+        self.channel_map = detchannelmaps.make_map(channel_map)
+
+    def get_n_obj(self,frag):
+        frag_data_size = frag.get_data_size()
+        size_so_far = 0
+        n_tobjs = 0
+        while size_so_far < frag_data_size:
+            tobj = self.trg_obj(frag.get_data(size_so_far))
+            n_tobjs = n_tobjs + 1
+            size_so_far = size_so_far + tobj.sizeof()
+        return n_tobjs
+
+    def get_trg_data_version(self,frag):
+        if self.get_n_obj(frag)==0:
+            return None
+        trig_obj = self.trg_obj(frag.get_data())
+        return trig_obj.data.version
+
+    def get_trg_obj_data(self,frag):
+        frh = frag.get_header()
+        tc_list = []
+        ta_list = []
+        size_so_far = 0
+        for i_tc in range(self.get_n_obj(frag)):
+            tc = self.trg_obj(frag.get_data(size_so_far))
+            size_so_far = size_so_far + tc.sizeof()
+            tc_list.append( TriggerCandidateData(run=frh.run_number,
+                                                trigger=frh.trigger_number,
+                                                sequence=frh.sequence_number,
+                                                src_id=frh.element_id.id,
+                                                id=i_tc,
+                                                time_start=tc.data.time_start,
+                                                time_end=tc.data.time_end,
+                                                time_candidate=tc.data.time_candidate,
+                                                detid=tc.data.detid,
+                                                tc_type=tc.data.type,
+                                                algorithm=tc.data.algorithm,
+                                                n_tas=len(tc) ) )
+            for i_ta in range(len(tc)):
+                ta = tc[i_ta]
+                ta_list.append( TriggerActivityData(run=frh.run_number,
+                                                    trigger=frh.trigger_number,
+                                                    sequence=frh.sequence_number,
+                                                    src_id=frh.element_id.id,
+                                                    id=i_ta,
+                                                    time_start=ta.data.time_start,
+                                                    time_end=ta.data.time_end,
+                                                    time_peak=ta.data.time_peak,
+                                                    time_activity=ta.data.time_activity,
+                                                    channel_start=ta.data.channel_start,
+                                                    channel_end=ta.data.channel_end,
+                                                    channel_peak=ta.data.channel_peak,
+                                                    plane=self.channel_map.get_plane_from_offline_channel(ta.data.channel_peak),
+                                                    apa=self.channel_map.get_tpc_element_from_offline_channel(ta.data.channel_peak),
+                                                    adc_integral=ta.data.adc_integral,
+                                                    adc_peak=ta.data.adc_peak,
+                                                    detid=ta.data.detid,
+                                                    ta_type=ta.data.type,
+                                                    algorithm=ta.data.algorithm,
+                                                    n_tps=-1,
+                                                    id_tc=i_tc) )
+        if len(ta_list)==0:
+            ta_list=None
+        return tc_list, ta_list
 
 
 class DetectorFragmentUnpacker(FragmentUnpacker):
@@ -351,6 +510,8 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
 
         get_ana_data = (self.ana_data_prescale is not None and (trigger_number % self.ana_data_prescale)==0)
         get_wvfm_data = (self.wvfm_data_prescale is not None and (trigger_number % self.wvfm_data_prescale)==0)
+
+        #print(f'\t\tTrigger number {trigger_number}: get_ana_data? {get_ana_data} get_wvfm_data? {get_wvfm_data}')
 
         if not (get_ana_data or get_wvfm_data):
             return None,None
