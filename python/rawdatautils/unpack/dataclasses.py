@@ -140,12 +140,48 @@ class TriggerPrimitiveData(FragmentDataBase):
     time_peak: int
     time_over_threshold: int
     channel: int
+    plane: int
+    apa: str
     adc_integral: int
     adc_peak: int
     detid: int
     tp_type: int
     algorithm: int
     flag: int
+    id_ta: int
+
+@dataclass(order=True)
+class TriggerActivityData(FragmentDataBase):
+
+    time_start: int
+    time_end: int
+    time_peak: int
+    time_activity: int
+    channel_start: int
+    channel_end: int
+    channel_peak: int
+    plane: int
+    apa: str
+    adc_integral: int
+    adc_peak: int
+    detid: int
+    ta_type: int
+    algorithm: int
+    n_tps: int
+    id: int
+    id_tc: int
+
+@dataclass(order=True)
+class TriggerCandidateData(FragmentDataBase):
+
+    time_start: int
+    time_end: int
+    time_candidate: int
+    detid: int
+    tc_type: int
+    algorithm: int
+    n_tas: int
+    id: int
 
 @dataclass(order=True)
 class DAQHeaderData(FragmentDataBase):
