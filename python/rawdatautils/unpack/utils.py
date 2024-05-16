@@ -735,8 +735,8 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
                                              channel=daphne_headers[iframe].channel,
                                              daphne_chan=daphne_headers[iframe].channel,
                                              timestamp_dts=timestamp[iframe],
-                                             timestamps=np.arange(np.size(adcs[:,iframe]))*self.SAMPLING_PERIOD+timestamp[iframe],
-                                             adcs=adcs[:,iframe]) for iframe in range(n_frames) ]
+                                             timestamps=np.arange(np.size(adcs[iframe,:]))*self.SAMPLING_PERIOD+timestamp[iframe],
+                                             adcs=adcs[iframe,:]) for iframe in range(n_frames) ]
 
         return ana_data, wvfm_data
 
