@@ -13,10 +13,10 @@ daq_setup_environment()
 
 ##############################################################################
 # Main library
-daq_add_library (WIBFragmentDecoder.cpp LINK_LIBRARIES)
+# daq_add_library (WIBFragmentDecoder.cpp LINK_LIBRARIES)
 
 ##############################################################################
-daq_add_python_bindings(*.cpp LINK_LIBRARIES ${PROJECT_NAME} daqdataformats::daqdataformats detdataformats::detdataformats fddetdataformats::fddetdataformats trgdataformats::trgdataformats)
+daq_add_python_bindings(*.cpp LINK_LIBRARIES daqdataformats::daqdataformats detdataformats::detdataformats fddetdataformats::fddetdataformats trgdataformats::trgdataformats)
 
 daq_add_unit_test(WIBtoWIB2_test LINK_LIBRARIES detdataformats::detdataformats fddetdataformats::fddetdataformats)
 

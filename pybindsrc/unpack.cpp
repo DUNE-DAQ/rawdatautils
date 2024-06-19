@@ -26,17 +26,6 @@ namespace py = pybind11;
 namespace dunedaq {
 namespace rawdatautils {
 
-// void print_hex_fragment(daqdataformats::Fragment const& frag) {
-//   uint64_t* data = static_cast<uint64_t*>(frag.get_data());
-//   size_t data_size = (frag.get_size() - sizeof(daqdataformats::FragmentHeader))/8;
-
-//   for ( size_t i(0); i<data_size; ++i) {
-//     fmt::print("{:06d} 0x{:016x}\n", i, data[i]);
-//   }
-
-// }
-
-
 namespace wib {
   extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
   extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
@@ -89,6 +78,15 @@ namespace tde {
   extern py::array_t<uint64_t> np_array_channel_data(daqdataformats::Fragment const& frag);
 
 }
+
+namespace tdebeth {
+  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc_data(void* data, uint32_t n_frames);
+  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, uint32_t n_frames);
+}
+
 
 namespace triggerprimitive {
   extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
