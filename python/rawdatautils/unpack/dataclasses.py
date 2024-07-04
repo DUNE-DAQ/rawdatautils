@@ -102,12 +102,10 @@ class TriggerRecordData(RecordDataBase):
     total_size_bytes: int
     trigger_time : datetime = field(init=False)
     trigger_type_bits: list[int] = field(init=False)
-    trigger_type_names: list[str] = field(init=False)
 
     def __post_init__(self):
         self.trigger_time = dts_to_datetime(self.trigger_timestamp_dts)
         self.trigger_type_bits = [ trgdataformats.TriggerCandidateData.Type(i) for i in range(64) if (self.trigger_type & (1<<i))!=0 ]
-        self.trigger_type_names = [ str(trgdataformats.TriggerCandidateData.Type(i))[6:] for i in range(64) if (self.trigger_type & (1<<i))!=0 ]
     
 
 @dataclass(order=True)
