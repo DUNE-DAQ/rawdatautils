@@ -127,7 +127,7 @@ def main(filenames, nrecords, nskip, channel_map, print_headers, print_adc_stats
                             data_extent_before_readout_window = frag_window_begin - timestamps[0]
                             data_extent_after_readout_window = timestamps[-1] - frag_window_end
                             print(f'\t\tData extent beyond readout window (before,after): {data_extent_before_readout_window},{data_extent_after_readout_window} (approximate)')
-                            if data_extent_before_readout_window < 0.0 or data_extent_after_readout_window < 0.0:
+                            if data_extent_before_readout_window < 0.0 or data_extent_after_readout_window < -32.0:
                                 print(f'\t\t\tWARNING: the WIBEth data does not fully cover the readout window ({frag_window_begin},{frag_window_end})')
 
 
