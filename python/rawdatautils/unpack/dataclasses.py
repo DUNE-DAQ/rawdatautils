@@ -10,8 +10,11 @@ import fddetdataformats
 import trgdataformats
 import detchannelmaps
 
+def dts_to_seconds(dts):
+     return dts*16 //1e9
+
 def dts_to_datetime(dts_timestamp):
-    return datetime.fromtimestamp(dts_timestamp*16 // 1e9, tz=pytz.timezone("UTC"))
+    return datetime.fromtimestamp(dts_to_seconds(dts_timestamp), tz=pytz.timezone("UTC"))
 
 ## Sparsification and desparsifications for arrays
 
@@ -98,10 +101,11 @@ class TriggerRecordData(RecordDataBase):
     max_sequence_number: int
     total_size_bytes: int
     trigger_time : datetime = field(init=False)
+    trigger_type_bits: list[int] = field(init=False)
 
     def __post_init__(self):
         self.trigger_time = dts_to_datetime(self.trigger_timestamp_dts)
-
+        self.trigger_type_bits = [ trgdataformats.TriggerCandidateData.Type(i) for i in range(64) if (self.trigger_type & (1<<i))!=0 ]
     
 
 @dataclass(order=True)
@@ -137,12 +141,48 @@ class TriggerPrimitiveData(FragmentDataBase):
     time_peak: int
     time_over_threshold: int
     channel: int
+    plane: int
+    apa: str
     adc_integral: int
     adc_peak: int
     detid: int
     tp_type: int
     algorithm: int
     flag: int
+    id_ta: int
+
+@dataclass(order=True)
+class TriggerActivityData(FragmentDataBase):
+
+    time_start: int
+    time_end: int
+    time_peak: int
+    time_activity: int
+    channel_start: int
+    channel_end: int
+    channel_peak: int
+    plane: int
+    apa: str
+    adc_integral: int
+    adc_peak: int
+    detid: int
+    ta_type: int
+    algorithm: int
+    n_tps: int
+    id: int
+    id_tc: int
+
+@dataclass(order=True)
+class TriggerCandidateData(FragmentDataBase):
+
+    time_start: int
+    time_end: int
+    time_candidate: int
+    detid: int
+    tc_type: int
+    algorithm: int
+    n_tas: int
+    id: int
 
 @dataclass(order=True)
 class DAQHeaderData(FragmentDataBase):
