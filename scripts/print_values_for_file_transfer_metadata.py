@@ -35,6 +35,13 @@ def main(filename):
         attr_value = "false"
     print(f'{attr_name} {attr_value}')
 
+    attr_name = "file_recovery_timestamp"
+    try:
+        attr_value = h5_file.get_attribute(attr_name)
+        print(f'{attr_name} {attr_value}')
+    except RuntimeError:
+        pass
+
     records = h5_file.get_all_record_ids()
 
     print('=== start of record list')
