@@ -37,7 +37,7 @@ def main(filename):
 
     attr_name = "file_recovery_timestamp"
     try:
-        attr_value = h5_file.get_attribute(attr_name)
+        attr_value = h5_file.get_int_attribute(attr_name)
         print(f'{attr_name} {attr_value}')
     except RuntimeError:
         pass
