@@ -12,14 +12,24 @@ import time
 def main(filename):
 
     h5_file = HDF5RawDataFile(filename)
+    file_layout_version = h5_file.get_version()
+    #print(f'file_layout_verion {file_layout_version}')
 
     attr_name = "creation_timestamp"
-    attr_value = h5_file.get_attribute(attr_name)
-    print(f'{attr_name} {attr_value}')
+    if file_layout_version >= 6:
+        attr_value = h5_file.get_int_attribute(attr_name)
+        print(f'{attr_name} {attr_value}')
+    else:
+        attr_value = h5_file.get_attribute(attr_name)
+        print(f'{attr_name} {attr_value}')
     
     attr_name = "closing_timestamp"
-    attr_value = h5_file.get_attribute(attr_name)
-    print(f'{attr_name} {attr_value}')
+    if file_layout_version >= 6:
+        attr_value = h5_file.get_int_attribute(attr_name)
+        print(f'{attr_name} {attr_value}')
+    else:
+        attr_value = h5_file.get_attribute(attr_name)
+        print(f'{attr_name} {attr_value}')
 
     attr_name = "offline_data_stream"
     try:
