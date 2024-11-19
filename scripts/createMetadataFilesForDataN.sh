@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Kurt Biery, October 2021 - November 2023
+# Kurt Biery, October 2021 - April 2024
 
 # decode arguments
 if [ "$1" == "--help" ] || [ "$1" == "-h" ] || [ "$1" == "-?" ]; then
@@ -23,16 +23,16 @@ filenamePrefixList=( "np04hd_raw" "np04hd_tp" "np02vd_raw" "np02vd_tp" "np04hdco
 
 lockFileDir="/tmp"
 lockFileName=".mdFileCronjob_data${data_disk_number}.lock"
-staleLockFileTimeoutMinutes=30
+staleLockFileTimeoutMinutes=7
 
 setupScriptPath="/nfs/home/np04daq/.cron/setupDuneDAQ"
-ourHDF5DumpScript="print_trnumbers_for_json_metadata.py"
+ourHDF5DumpScript="print_values_for_file_transfer_metadata.py"
 scratchFile="/tmp/metadata_scratch_$$.out"
 requestedJSONFileOutputDir="."  # an empty or "." value puts JSON files in the same dirs as the ROOT files
 logPath="/log/metadataFileCreator/createMDFile_data${data_disk_number}.log"
 extraFieldCommand="python /nfs/home/np04daq/.cron/insert_extra_fields.py"
-let debugLevel=2  # only zero, one, and two are useful, at the moment; two is for performance tracing
-versionOfThisScript="v2.7.4"
+let debugLevel=2  # only zero, one, two, and three are useful, at the moment; two is for performance tracing
+versionOfThisScript="v3.2.2"
 
 # define a function to log messages
 function logMessage() {
@@ -66,38 +66,35 @@ fi
 touch ${lockFileDir}/${lockFileName}
 
 dunedaqSetupAttempted="no"
-processed_one_or_more_files="yes"
-while [[ "${processed_one_or_more_files}" != "" ]]; do
-    processed_one_or_more_files=""
+found_one_or_more_files="yes"
+errors_were_encountered=""
+while [[ "${found_one_or_more_files}" != "" ]] && [[ "$errors_were_encountered" == "" ]] ; do
+    found_one_or_more_files=""
 
     # 29-Oct-2021, KAB: added loop over filename prefixes
     for filenamePrefix in ${filenamePrefixList[@]}; do
 
 	dataFileNamePattern="${filenamePrefix}_run??????_*.hdf5"
-	if [[ "$filenamePrefix" == "np02_bde_coldbox" ]] || [[ "$filenamePrefix" == "vd_coldbox_bottom" ]]; then
-            offlineRunTypeReallyOpEnv="vd-coldbox-bottom"
-	elif [[ "$filenamePrefix" == "np04_hd" ]] || [[ "$filenamePrefix" == "np04hd_raw" ]] || [[ "$filenamePrefix" == "np04hd_tp" ]]; then
+	if [[ "$filenamePrefix" == "np04hd_raw" ]] || [[ "$filenamePrefix" == "np04hd_tp" ]]; then
             offlineRunTypeReallyOpEnv="hd-protodune"
-	elif [[ "$filenamePrefix" == "np02_vd" ]] || [[ "$filenamePrefix" == "np02vd_raw" ]] || [[ "$filenamePrefix" == "np02vd_tp" ]]; then
+	elif [[ "$filenamePrefix" == "np02vd_raw" ]] || [[ "$filenamePrefix" == "np02vd_tp" ]]; then
             offlineRunTypeReallyOpEnv="vd-protodune"
-	elif [[ "$filenamePrefix" == "np04_coldbox" ]] || [[ "$filenamePrefix" == "np04hdcoldbox_raw" ]] || [[ "$filenamePrefix" == "np04hdcoldbox_tp" ]]; then
+	elif [[ "$filenamePrefix" == "np04hdcoldbox_raw" ]] || [[ "$filenamePrefix" == "np04hdcoldbox_tp" ]]; then
             offlineRunTypeReallyOpEnv="hd-coldbox"
 	elif [[ "$filenamePrefix" == "np02vdcoldbox_raw" ]] || [[ "$filenamePrefix" == "np02vdcoldbox_tp" ]]; then
             offlineRunTypeReallyOpEnv="vd-coldbox"
-	elif [[ "$filenamePrefix" == "np02_pds" ]]; then
-            offlineRunTypeReallyOpEnv="vd-protodune-pds"
 	else
             offlineRunTypeReallyOpEnv=${filenamePrefix}
 	fi
 
-	if [[ $debugLevel -ge 1 ]]; then
+	if [[ $debugLevel -ge 3 ]]; then
             logMessage "Searching for filenames like \"${dataFileNamePattern}\" in \"${dataDirs}\"."
             logMessage "Offline run_type is \"${offlineRunTypeReallyOpEnv}\"."
 	fi
 
 	# loop over all of the files that are found in the requested data directories
-	let processed_file_count=0
-	for volatileFileName in $(find ${dataDirs} -maxdepth 1 -name "${dataFileNamePattern}" -type f -mmin +${minDataFileAgeMinutes} -mmin -${maxDataFileAgeMinutes} -print 2>/dev/null | sort -r); do
+	let found_file_count=0
+	for volatileFileName in $(find -L ${dataDirs} -maxdepth 1 -user np04daq -name "${dataFileNamePattern}" -type f -mmin +${minDataFileAgeMinutes} -mmin -${maxDataFileAgeMinutes} -print 2>/dev/null | sort -r); do
 
 	    # we assume that we need a periodic touch of the lock file
 	    touch ${lockFileDir}/${lockFileName}
@@ -140,26 +137,12 @@ while [[ "${processed_one_or_more_files}" != "" ]]; do
 		runNumber=`echo ${runNumber} | sed 's/^0*//'`
 		# convert it to a number (may be needed later if we do range comparisons)
 		let runNumber=$runNumber+0
+		let subrunNumber=$runNumber*100000+1
 
-		# if we don't have a copy of the our HDF5 dumper utility, do what we can...
+		# double-check that we have a copy of the our HDF5 dumper utility
 		if [[ "$hdf5DumpFullPath" == "" ]]; then
-		    logMessage "Creating ${jsonFileName} without using any extra tools."
+		    logMessage "ERROR: The ${ourHDF5DumpScript} script is not available, so the file-transfer metadata file will not be created."
 
-		    echo "{" > ${workingJSONFileName}
-		    echo "  \"data_stream\": \"test\"," >> ${workingJSONFileName}
-		    if [[ "`echo ${filenamePrefix} | grep '_tp$'`" != "" ]]; then
-			echo "  \"data_tier\": \"trigprim\"," >> ${workingJSONFileName}
-		    else
-			echo "  \"data_tier\": \"raw\"," >> ${workingJSONFileName}
-		    fi
-		    echo "  \"file_format\": \"hdf5\"," >> ${workingJSONFileName}
-		    echo "  \"file_name\": \"${baseFileName}\"," >> ${workingJSONFileName}
-		    echo "  \"file_type\": \"detector\"," >> ${workingJSONFileName}
-		    if [[ "`echo ${fullFileName} | grep 'transfer_test'`" != "" ]]; then
-			echo "  \"DUNE.campaign\": \"DressRehearsalNov2023\"," >> ${workingJSONFileName}
-		    fi
-		    echo "  \"runs\": [[${run_number},1,\"${offlineRunTypeReallyOpEnv}\"]]" >> ${workingJSONFileName}
-		    echo "}" >> ${workingJSONFileName}
 		else
 		    if [[ $debugLevel -ge 1 ]]; then
 			logMessage "Creating ${jsonFileName} from ${fullFileName} using ${hdf5DumpFullPath} and local modifications."
@@ -167,15 +150,24 @@ while [[ "${processed_one_or_more_files}" != "" ]]; do
 			logMessage "Creating ${jsonFileName} using ${ourHDF5DumpScript} and local modifications."
 		    fi
 
-		    if [[ $debugLevel -ge 2 ]]; then logMessage "Before the TR (event) numbers are determined"; fi
+		    if [[ $debugLevel -ge 2 ]]; then logMessage "Before the needed HDF5 file values are fetched"; fi
 		    rm -f ${scratchFile}
-		    #${hdf5DumpFullPath} -H ${fullFileName} | grep GROUP | grep TriggerRecord | sed 's/.*TriggerRecord//' | sed 's/\".*//' > ${scratchFile} 2>/dev/null
 		    ${hdf5DumpFullPath} ${fullFileName} > ${scratchFile} 2>/dev/null
-		    if [[ $debugLevel -ge 2 ]]; then logMessage "After the TR (event) numbers are determined"; fi
+		    let script_retcode=$?
+		    if [[ $debugLevel -ge 2 ]]; then logMessage "After the needed HDF5 file values are fetched"; fi
 
 		    # if the dumper utility worked, process the results
-		    if [[ $? == 0 ]]; then
-			event_list=`cat ${scratchFile}`
+		    if [[ $script_retcode == 0 ]]; then
+			creation_time=`grep creation_timestamp ${scratchFile} | awk '{print $2}'`
+			let creation_time=$creation_time+0
+			let creation_time=$creation_time/1000
+			closing_time=`grep closing_timestamp ${scratchFile} | awk '{print $2}'`
+			let closing_time=$closing_time+0
+			let closing_time=$closing_time/1000
+			file_recovery_timestamp=`grep file_recovery_timestamp ${scratchFile}`
+			offline_data_stream=`grep offline_data_stream ${scratchFile} | awk '{print $2}'`
+			daq_test_flag=`grep run_was_for_test_purposes ${scratchFile} | awk '{print $2}'`
+			event_list=`cat ${scratchFile} | grep -A 99999999 'start of record list' | grep -B 99999999 'end of record list' | grep -v 'record list'`
 			#logMessage "event list is ${event_list}"
 			rm -f ${scratchFile}
 
@@ -191,46 +183,59 @@ while [[ "${processed_one_or_more_files}" != "" ]]; do
 			max_event_num=${sorted_list[-1]}
 
 			formatted_event_list=`echo "${sorted_list[*]}" | sed 's/ /,/g'`
-			if [[ $debugLevel -ge 2 ]]; then logMessage "Midway through processing the TR (event) numbers"; fi
+			if [[ $debugLevel -ge 2 ]]; then logMessage "Midway through processing the needed HDF5 file values"; fi
 
 			echo "{" > ${workingJSONFileName}
-			echo "  \"data_stream\": \"test\"," >> ${workingJSONFileName}
+			echo "  \"name\": \"${baseFileName}\"," >> ${workingJSONFileName}
+			echo "  \"namespace\": \"${offlineRunTypeReallyOpEnv}\"," >> ${workingJSONFileName}
+			echo "  \"metadata\": {" >> ${workingJSONFileName}
+			echo "    \"core.data_stream\": \"${offline_data_stream}\"," >> ${workingJSONFileName}
 			if [[ "`echo ${filenamePrefix} | grep '_tp$'`" != "" ]]; then
-			    echo "  \"data_tier\": \"trigprim\"," >> ${workingJSONFileName}
+			    echo "    \"core.data_tier\": \"trigprim\"," >> ${workingJSONFileName}
 			else
-			    echo "  \"data_tier\": \"raw\"," >> ${workingJSONFileName}
+			    echo "    \"core.data_tier\": \"raw\"," >> ${workingJSONFileName}
 			fi
-			echo "  \"event_count\": ${event_count}," >> ${workingJSONFileName}
-			echo "  \"events\": [${formatted_event_list}]," >> ${workingJSONFileName}
-			echo "  \"file_format\": \"hdf5\"," >> ${workingJSONFileName}
-			echo "  \"file_name\": \"${baseFileName}\"," >> ${workingJSONFileName}
-			echo "  \"file_type\": \"detector\"," >> ${workingJSONFileName}
-			if [[ "`echo ${fullFileName} | grep 'transfer_test'`" != "" ]]; then
-			    echo "  \"DUNE.campaign\": \"DressRehearsalNov2023\"," >> ${workingJSONFileName}
+			echo "    \"core.file_format\": \"hdf5\"," >> ${workingJSONFileName}
+			echo "    \"core.file_type\": \"detector\"," >> ${workingJSONFileName}
+			if [[ "${file_recovery_timestamp}" == "" ]]; then
+			    echo "    \"core.file_content_status\": \"good\"," >> ${workingJSONFileName}
+			else
+			    echo "    \"core.file_content_status\": \"recovered\"," >> ${workingJSONFileName}
 			fi
-			echo "  \"first_event\": ${min_event_num}," >> ${workingJSONFileName}
-			echo "  \"last_event\": ${max_event_num}," >> ${workingJSONFileName}
-			echo "  \"runs\": [[${runNumber},1,\"${offlineRunTypeReallyOpEnv}\"]]" >> ${workingJSONFileName}
+			echo "    \"retention.status\": \"active\"," >> ${workingJSONFileName}
+			echo "    \"retention.class\": \"physics\"," >> ${workingJSONFileName}
+			echo "    \"core.start_time\": ${creation_time}.0," >> ${workingJSONFileName}
+			echo "    \"core.end_time\": ${closing_time}.0," >> ${workingJSONFileName}
+			echo "    \"dune.daq_test\": ${daq_test_flag}," >> ${workingJSONFileName}
+			echo "    \"core.event_count\": ${event_count}," >> ${workingJSONFileName}
+			echo "    \"core.events\": [${formatted_event_list}]," >> ${workingJSONFileName}
+			#if [[ "`echo ${fullFileName} | grep 'transfer_test'`" != "" ]]; then
+			#    echo "  \"DUNE.campaign\": \"DressRehearsalNov2023\"," >> ${workingJSONFileName}
+			#fi
+			echo "    \"core.first_event_number\": ${min_event_num}," >> ${workingJSONFileName}
+			echo "    \"core.last_event_number\": ${max_event_num}," >> ${workingJSONFileName}
+			echo "    \"core.runs\": [${runNumber}]," >> ${workingJSONFileName}
+			echo "    \"core.runs_subruns\": [$subrunNumber]," >> ${workingJSONFileName}
+			echo "    \"core.run_type\": \"${offlineRunTypeReallyOpEnv}\"" >> ${workingJSONFileName}
+			echo "  }" >> ${workingJSONFileName}
 			echo "}" >> ${workingJSONFileName}
+
+			if [[ $debugLevel -ge 2 ]]; then logMessage "After the needed HDF5 file values are processed"; fi
+
+			${extraFieldCommand} ${fullFileName} ${workingJSONFileName} >/dev/null 2>/dev/null
+			mv ${workingJSONFileName} ${jsonFileName}
+			if [[ $debugLevel -ge 2 ]]; then logMessage "After extra field(s) are added"; fi
 		    else
 			logMessage "ERROR: unable to run ${ourHDF5DumpScript} on \"${fullFileName}\"."
-			rm ${workingJSONFileName}
+			errors_were_encountered="yes"
 		    fi
-		    if [[ $debugLevel -ge 2 ]]; then logMessage "After the TR (event) numbers are processed"; fi
 		fi
 
-		if [[ $debugLevel -ge 2 ]]; then logMessage "Before extra field(s) are added"; fi
-		if [[ -e "${workingJSONFileName}" ]]; then
-		    ${extraFieldCommand} ${fullFileName} ${workingJSONFileName} >/dev/null 2>/dev/null
-		    mv ${workingJSONFileName} ${jsonFileName}
-		fi
-		if [[ $debugLevel -ge 2 ]]; then logMessage "After extra field(s) are added"; fi
-
-		let processed_file_count=$processed_file_count+1
-		processed_one_or_more_files="yes"
+		let found_file_count=$found_file_count+1
+		found_one_or_more_files="yes"
 	    fi
 
-	    if [[ $processed_file_count -ge 16 ]]; then break; fi
+	    if [[ $found_file_count -ge 16 ]]; then break; fi
 	done # loop over the files that have been found
 
     done # loop over filename prefixes
