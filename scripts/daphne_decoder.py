@@ -13,6 +13,7 @@ from hdf5libs import HDF5RawDataFile
 
 import daqdataformats
 import detdataformats
+import fddetdataformats
 from daqdataformats import FragmentType
 from rawdatautils.unpack.daphne import *
 import detchannelmaps
@@ -42,8 +43,14 @@ def print_links(pds_geo_ids):
     split = " "*6 + "|" + " "*6
     geo_data = [[] for i in range(4)]
     for gid in pds_geo_ids:
-        geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
-        geo_data[geo_info.det_slot].append(geo_info.det_link)
+        #geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
+        det_link = 0xffff & (gid >> 48);
+        det_slot = 0xffff & (gid >> 32);
+        det_crate = 0xffff & (gid >> 16);
+        det_id = 0xffff & gid;
+        subdet = detdataformats.DetID.Subdetector(det_id)
+        det_name = detdataformats.DetID.subdetector_to_string(subdet)
+        geo_data[det_slot].append(det_link)
 
     
     for i in range(len(geo_data)):
@@ -121,53 +128,49 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
         for gid in pds_geo_ids:
             
             frag     = h5_file.get_frag(r,gid)
-            geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
+            #geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
+            det_link = 0xffff & (gid >> 48);
+            det_slot = 0xffff & (gid >> 32);
+            det_crate = 0xffff & (gid >> 16);
+            det_id = 0xffff & gid;
+            subdet = detdataformats.DetID.Subdetector(det_id)
+            det_name = detdataformats.DetID.subdetector_to_string(subdet)
             fragType = frag.get_header().fragment_type
-            #print(fragType)
 
-            if fragType == FragmentType.kDAPHNEStream.value:
-
-                timestamps = np_array_timestamp_stream(frag)
-                adcs       = np_array_adc_stream(frag)
-                channels   = np_array_channels_stream(frag)[0]
-                n_channels = len(np.unique(channels))
+            if fragType == FragmentType.kDAPHNE.value:
             
-            elif fragType == FragmentType.kDAPHNE.value or fragType == '3':
-            
+                first_frame = fddetdataformats.DAPHNEFrame(frag.get_data())
                 timestamps = np_array_timestamp(frag)
                 adcs       = np_array_adc(frag)
                 channels   = np_array_channels(frag)
                 n_channels = len(np.unique(channels))
-                #print(n_channels)
 
-            #elif fragType == 13:
-            #elif fragType == FragmentType.kDAPHNEStream.value:
+            elif fragType == 13:
 
-            #    timestamps = np_array_timestamp_stream(frag)
-            #    adcs       = np_array_adc_stream(frag)
-            #    channels   = np_array_channels_stream(frag)[0]
-            #    n_channels = len(np.unique(channels))
+                first_frame = fddetdataformats.DAPHNEStreamFrame(frag.get_data())
+                timestamps = np_array_timestamp_stream(frag)
+                adcs       = np_array_adc_stream(frag)
+                channels   = np_array_channels_stream(frag)[0]
+                n_channels = len(np.unique(channels))
 
             trigger_stamps.append(frag.get_trigger_timestamp())     
 
-            ts_status = f"{bcolors.FAIL}{'Problems':^20}{bcolors.ENDC}"
+            daq_header = first_frame.get_daqheader()
+            print(daq_header,daq_header.version)
 
-            if n_channels == 0:
-                line = f"{geo_info.det_crate:^10} {geo_info.det_slot:^10} {geo_info.det_link:^10} {dmodes[fragType] :^15} {'Empty fragment':^40} "
-                print(line)
+            ts_status = f"{bcolors.FAIL}{'Problems':^20}{bcolors.ENDC}"
 
             for ch_num in range(n_channels):
                 scanned_channels += 1
-                line = f"{geo_info.det_crate:^10} {geo_info.det_slot:^10} {geo_info.det_link:^10} {dmodes[fragType] :^15} {channels[ch_num]:^10} "
+                line = f"{det_crate:^10} {det_slot:^10} {det_link:^10} {dmodes[fragType] :^15} {channels[ch_num]:^10} "
+
+                if np.mean(adcs[:]) > 10:
+                    active_channels += 1
 
                 if adc_stats:
                     if fragType == FragmentType.kDAPHNE.value:
-                        if np.std(adcs[:]) > 10:
-                            active_channels += 1
                         line += f"{np.mean(adcs[:]):^10.2f}  {np.std(adcs[:]):^10.2f} "
                     else:
-                        if np.std(adcs[:, ch_num]) > 10:
-                            active_channels += 1
                         line += f"{np.mean(adcs[:, ch_num]):^10.2f}  {np.std(adcs[:, ch_num]):^10.2f} "
 
                 if check_ts:
@@ -181,10 +184,10 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
 
                 print(line)
 
-            if tslot == geo_info.det_slot:
+            if tslot == det_slot:
                 continue
             else:
-                tslot = geo_info.det_slot
+                tslot = det_slot
                 print("")
 
 
