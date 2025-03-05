@@ -19,6 +19,7 @@ from rawdatautils.unpack.daphne import *
 import detchannelmaps
 
 import click
+import datetime
 import time
 import numpy as np
 import time
@@ -67,8 +68,9 @@ def print_links(pds_geo_ids):
 @click.option('--summary', is_flag=True, help="Print checks summary")
 @click.option('--check_ts', is_flag=True, help="Print timestamps check")
 @click.option('--adc_stats', is_flag=True, help="Print adc stats")
+@click.option('--print_frame_timestamps', is_flag=True, help="Print individual frame timestamps (can be verbose)")
 
-def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
+def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary, print_frame_timestamps):
 
     h5_file   = HDF5RawDataFile(filename)
     records   = h5_file.get_all_record_ids()
@@ -116,8 +118,11 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
         if check_ts:
             headline += f" {'TS stats':^17} {'TS Check':^18}"
 
+        trg_ts_nsec = float(h5_file.get_frag(r,pds_geo_ids[0]).get_trigger_timestamp())/62500000.0
+        trg_time_string = datetime.datetime.fromtimestamp(trg_ts_nsec)
+
         print("-"*114)
-        print(f"{'RECORD':>50}: {r[0]:<15} {time.ctime(h5_file.get_frag(r,pds_geo_ids[0]).get_trigger_timestamp()*16 /1e9):^20}")
+        print(f"{'RECORD':>50}: {r[0]:<15} {str(trg_time_string):^26}")
         print("-"*114)
         print(headline)
         print("-"*114)
@@ -153,7 +158,7 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
                 channels   = np_array_channels_stream(frag)[0]
                 n_channels = len(np.unique(channels))
 
-            trigger_stamps.append(frag.get_trigger_timestamp())     
+            trigger_stamps.append(frag.get_trigger_timestamp())
 
             daq_header = first_frame.get_daqheader()
             print(daq_header,daq_header.version)
@@ -190,10 +195,19 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
                 tslot = det_slot
                 print("")
 
+            if (print_frame_timestamps):
+                temp_dashes_string = "-"*110
+                print(f"    {temp_dashes_string}")
+                print("      --> Frame timestamp details <--")
+                print("      Index  Channel  DTS Timestamp (ticks)  DTS Timestamp (time string)")
+                print(f"    {temp_dashes_string}")
+                for idx in range(len(timestamps)):
+                    ts_nsec = float(timestamps[idx])/62500000.0
+                    time_string = datetime.datetime.fromtimestamp(ts_nsec)
+                    print(f'     {idx:>5}   {channels[idx]:>5}    {timestamps[idx]:>20}    {str(time_string):<26}')
+                print()
 
         print(f"Number of active/total channels \t-- {active_channels:>20}/{scanned_channels}\n")
-
-        
 
     if summary:
 
