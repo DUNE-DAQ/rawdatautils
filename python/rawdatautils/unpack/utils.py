@@ -171,8 +171,6 @@ class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
                                                   adc_integral=tp.adc_integral,
                                                   adc_peak=tp.adc_peak,
                                                   detid=tp.detid,
-                                                  tp_type=tp.type,
-                                                  algorithm=tp.algorithm,
                                                   flag=tp.flag) )
 
 

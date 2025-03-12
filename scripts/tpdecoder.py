@@ -9,6 +9,7 @@ import trgdataformats
 import click
 import time
 import numpy as np
+import sys
 
 from rawdatautils.unpack.dataclasses import *
 
@@ -65,7 +66,9 @@ def main(filenames, nrecords, nskip):
 
                 for i in range(n_tps):
                     tp = trgdataformats.TriggerPrimitive(frag.get_data(i*trgdataformats.TriggerPrimitive.sizeof()))
-                                        
+                    if tp.version != trgdataformats.TriggerPrimitive.s_trigger_primitive_version:
+                        sys.exit(f"ERROR: the TP data structure version found in the data ({tp.version}) does not match the version expected by this version of the software ({trgdataformats.TriggerPrimitive.s_trigger_primitive_version}). Please use a version of the software that matches the data.")
+
                     tpd = TriggerPrimitiveData(run=frag.get_run_number(),
                                                trigger=frag.get_trigger_number(),
                                                sequence=frag.get_sequence_number(),
@@ -77,8 +80,6 @@ def main(filenames, nrecords, nskip):
                                                adc_integral=tp.adc_integral,
                                                adc_peak=tp.adc_peak,
                                                detid=tp.detid,
-                                               tp_type=tp.type,
-                                               algorithm=tp.algorithm,
                                                flag=tp.flag)
                     print(tpd)
                     

@@ -140,8 +140,6 @@ class TriggerPrimitiveData(FragmentDataBase):
     adc_integral: int
     adc_peak: int
     detid: int
-    tp_type: int
-    algorithm: int
     flag: int
 
 @dataclass(order=True)
