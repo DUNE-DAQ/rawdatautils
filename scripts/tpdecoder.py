@@ -74,7 +74,7 @@ def main(filenames, nrecords, nskip):
                                                sequence=frag.get_sequence_number(),
                                                src_id=frag.get_element_id().id,
                                                time_start=tp.time_start,
-                                               time_peak=tp.time_peak,
+                                               samples_to_peak=tp.samples_to_peak,
                                                samples_over_threshold=tp.samples_over_threshold,
                                                channel=tp.channel,
                                                adc_integral=tp.adc_integral,
