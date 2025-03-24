@@ -135,7 +135,7 @@ class TriggerPrimitiveData(FragmentDataBase):
 
     time_start: int
     time_peak: int
-    time_over_threshold: int
+    samples_over_threshold: int
     channel: int
     adc_integral: int
     adc_peak: int

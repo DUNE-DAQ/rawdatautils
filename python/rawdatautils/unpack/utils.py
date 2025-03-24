@@ -166,7 +166,7 @@ class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
                                                   src_id=frh.element_id.id,
                                                   time_start=tp.time_start,
                                                   time_peak=tp.time_peak,
-                                                  time_over_threshold=tp.time_over_threshold,
+                                                  samples_over_threshold=tp.samples_over_threshold,
                                                   channel=tp.channel,
                                                   adc_integral=tp.adc_integral,
                                                   adc_peak=tp.adc_peak,
