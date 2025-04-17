@@ -134,14 +134,12 @@ class TriggerHeaderData(FragmentDataBase):
 class TriggerPrimitiveData(FragmentDataBase):
 
     time_start: int
-    time_peak: int
-    time_over_threshold: int
+    samples_to_peak: int
+    samples_over_threshold: int
     channel: int
     adc_integral: int
     adc_peak: int
     detid: int
-    tp_type: int
-    algorithm: int
     flag: int
 
 @dataclass(order=True)

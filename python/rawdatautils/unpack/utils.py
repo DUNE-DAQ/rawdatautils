@@ -165,14 +165,12 @@ class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
                                                   sequence=frh.sequence_number,
                                                   src_id=frh.element_id.id,
                                                   time_start=tp.time_start,
-                                                  time_peak=tp.time_peak,
-                                                  time_over_threshold=tp.time_over_threshold,
+                                                  samples_to_peak=tp.samples_to_peak,
+                                                  samples_over_threshold=tp.samples_over_threshold,
                                                   channel=tp.channel,
                                                   adc_integral=tp.adc_integral,
                                                   adc_peak=tp.adc_peak,
                                                   detid=tp.detid,
-                                                  tp_type=tp.type,
-                                                  algorithm=tp.algorithm,
                                                   flag=tp.flag) )
 
 
