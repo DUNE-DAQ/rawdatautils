@@ -13,11 +13,13 @@ from hdf5libs import HDF5RawDataFile
 
 import daqdataformats
 import detdataformats
+import fddetdataformats
 from daqdataformats import FragmentType
 from rawdatautils.unpack.daphne import *
 import detchannelmaps
 
 import click
+import datetime
 import time
 import numpy as np
 import time
@@ -42,8 +44,14 @@ def print_links(pds_geo_ids):
     split = " "*6 + "|" + " "*6
     geo_data = [[] for i in range(4)]
     for gid in pds_geo_ids:
-        geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
-        geo_data[geo_info.det_slot].append(geo_info.det_link)
+        #geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
+        det_link = 0xffff & (gid >> 48);
+        det_slot = 0xffff & (gid >> 32);
+        det_crate = 0xffff & (gid >> 16);
+        det_id = 0xffff & gid;
+        subdet = detdataformats.DetID.Subdetector(det_id)
+        det_name = detdataformats.DetID.subdetector_to_string(subdet)
+        geo_data[det_slot].append(det_link)
 
     
     for i in range(len(geo_data)):
@@ -57,11 +65,12 @@ def print_links(pds_geo_ids):
 @click.option('--det', default='HD_PDS', help='Subdetector string (default: HD_PDS)')
 @click.option('--nrecords', '-n', default=-1, help='How many Trigger Records to process (default: all)')
 @click.option('--nskip', default=0, help='How many Trigger Records to skip (default: 0)')
-@click.option('--summary', is_flag=True, help="Print checks summary")
-@click.option('--check_ts', is_flag=True, help="Print timestamps check")
-@click.option('--adc_stats', is_flag=True, help="Print adc stats")
+@click.option('--summary', is_flag=True, help="Print checks summary (currently broken?)")
+@click.option('--check_ts', is_flag=True, help="Print timestamps check (works for streaming data)")
+@click.option('--adc_stats', is_flag=True, help="Print adc stats (works for streaming data)")
+@click.option('--print_frame_timestamps', is_flag=True, help="Print individual frame timestamps (can be very verbose)")
 
-def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
+def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary, print_frame_timestamps):
 
     h5_file   = HDF5RawDataFile(filename)
     records   = h5_file.get_all_record_ids()
@@ -109,8 +118,11 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
         if check_ts:
             headline += f" {'TS stats':^17} {'TS Check':^18}"
 
+        trg_ts_nsec = float(h5_file.get_frag(r,pds_geo_ids[0]).get_trigger_timestamp())/62500000.0
+        trg_time_string = datetime.datetime.fromtimestamp(trg_ts_nsec)
+
         print("-"*114)
-        print(f"{'RECORD':>50}: {r[0]:<15} {time.ctime(h5_file.get_frag(r,pds_geo_ids[0]).get_trigger_timestamp()*16 /1e9):^20}")
+        print(f"{'RECORD':>50}: {r[0]:<15} {str(trg_time_string):^26}")
         print("-"*114)
         print(headline)
         print("-"*114)
@@ -121,53 +133,49 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
         for gid in pds_geo_ids:
             
             frag     = h5_file.get_frag(r,gid)
-            geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
+            det_link = 0xffff & (gid >> 48);
+            det_slot = 0xffff & (gid >> 32);
+            det_crate = 0xffff & (gid >> 16);
+            det_id = 0xffff & gid;
+            subdet = detdataformats.DetID.Subdetector(det_id)
+            det_name = detdataformats.DetID.subdetector_to_string(subdet)
             fragType = frag.get_header().fragment_type
-            #print(fragType)
 
-            if fragType == FragmentType.kDAPHNEStream.value:
-
-                timestamps = np_array_timestamp_stream(frag)
-                adcs       = np_array_adc_stream(frag)
-                channels   = np_array_channels_stream(frag)[0]
-                n_channels = len(np.unique(channels))
+            if fragType == FragmentType.kDAPHNE.value:
             
-            elif fragType == FragmentType.kDAPHNE.value or fragType == '3':
-            
+                first_frame = fddetdataformats.DAPHNEFrame(frag.get_data())
                 timestamps = np_array_timestamp(frag)
                 adcs       = np_array_adc(frag)
                 channels   = np_array_channels(frag)
                 n_channels = len(np.unique(channels))
-                #print(n_channels)
 
-            #elif fragType == 13:
-            #elif fragType == FragmentType.kDAPHNEStream.value:
+            elif fragType == FragmentType.kDAPHNEStream.value:
 
-            #    timestamps = np_array_timestamp_stream(frag)
-            #    adcs       = np_array_adc_stream(frag)
-            #    channels   = np_array_channels_stream(frag)[0]
-            #    n_channels = len(np.unique(channels))
+                first_frame = fddetdataformats.DAPHNEStreamFrame(frag.get_data())
+                timestamps = np_array_timestamp_stream(frag)
+                adcs       = np_array_adc_stream(frag)
+                channels   = np_array_channels_stream(frag)[0]
+                n_channels = len(np.unique(channels))
+                #print(f'Frame size = {first_frame.sizeof()}, number of timestamps, adcs, channels, channels_in_list = {len(timestamps)}, {len(adcs)}, {len(channels)}, {len(np_array_channels_stream(frag))}')
 
-            trigger_stamps.append(frag.get_trigger_timestamp())     
+            trigger_stamps.append(frag.get_trigger_timestamp())
+
+            daq_header = first_frame.get_daqheader()
+            print(daq_header,daq_header.version)
 
             ts_status = f"{bcolors.FAIL}{'Problems':^20}{bcolors.ENDC}"
 
-            if n_channels == 0:
-                line = f"{geo_info.det_crate:^10} {geo_info.det_slot:^10} {geo_info.det_link:^10} {dmodes[fragType] :^15} {'Empty fragment':^40} "
-                print(line)
-
             for ch_num in range(n_channels):
                 scanned_channels += 1
-                line = f"{geo_info.det_crate:^10} {geo_info.det_slot:^10} {geo_info.det_link:^10} {dmodes[fragType] :^15} {channels[ch_num]:^10} "
+                line = f"{det_crate:^10} {det_slot:^10} {det_link:^10} {dmodes[fragType] :^15} {channels[ch_num]:^10} "
+
+                if np.mean(adcs[:]) > 10:
+                    active_channels += 1
 
                 if adc_stats:
                     if fragType == FragmentType.kDAPHNE.value:
-                        if np.std(adcs[:]) > 10:
-                            active_channels += 1
                         line += f"{np.mean(adcs[:]):^10.2f}  {np.std(adcs[:]):^10.2f} "
                     else:
-                        if np.std(adcs[:, ch_num]) > 10:
-                            active_channels += 1
                         line += f"{np.mean(adcs[:, ch_num]):^10.2f}  {np.std(adcs[:, ch_num]):^10.2f} "
 
                 if check_ts:
@@ -181,16 +189,33 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary):
 
                 print(line)
 
-            if tslot == geo_info.det_slot:
+            if (print_frame_timestamps):
+                temp_channels = np_array_channels_stream(frag)
+                temp_dashes_string = "-"*110
+                print(f"    {temp_dashes_string}")
+                print("      --> Frame timestamp details <--")
+                print("      Index  Channel  DTS Timestamp (ticks)  DTS Timestamp (time string)")
+                print(f"    {temp_dashes_string}")
+                loop_counter = 0;
+                for idx in range(len(timestamps)):
+                    if fragType == FragmentType.kDAPHNEStream.value and (idx % 64) != 0:
+                        continue
+                    ts_nsec = float(timestamps[idx])/62500000.0
+                    time_string = datetime.datetime.fromtimestamp(ts_nsec)
+                    if fragType == FragmentType.kDAPHNEStream.value:
+                        print(f'     {(idx/64):>5}   {temp_channels[loop_counter]}    {timestamps[idx]:>20}    {str(time_string):<26}')
+                    else:
+                        print(f'     {idx:>5}   {channels[idx]:>5}    {timestamps[idx]:>20}    {str(time_string):<26}')
+                    loop_counter += 1
+                print()
+
+            if tslot == det_slot:
                 continue
             else:
-                tslot = geo_info.det_slot
+                tslot = det_slot
                 print("")
 
-
         print(f"Number of active/total channels \t-- {active_channels:>20}/{scanned_channels}\n")
-
-        
 
     if summary:
 
