@@ -163,6 +163,9 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary, print_fra
             daq_header = first_frame.get_daqheader()
             print(daq_header,daq_header.version)
 
+            daq_header = first_frame.get_daqheader()
+            print(daq_header,daq_header.version)
+            
             ts_status = f"{bcolors.FAIL}{'Problems':^20}{bcolors.ENDC}"
 
             for ch_num in range(n_channels):
@@ -171,7 +174,7 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary, print_fra
 
                 if np.mean(adcs[:]) > 10:
                     active_channels += 1
-
+                
                 if adc_stats:
                     if fragType == FragmentType.kDAPHNE.value:
                         line += f"{np.mean(adcs[:]):^10.2f}  {np.std(adcs[:]):^10.2f} "
