@@ -245,18 +245,17 @@ class TriggerActivityUnpacker(TriggerDataUnpacker):
                                                       sequence=frh.sequence_number,
                                                       src_id=frh.element_id.id,
                                                       time_start=tp.time_start,
-                                                      time_peak=tp.time_peak,
-                                                      time_over_threshold=tp.time_over_threshold,
+                                                      samples_to_peak=tp.samples_to_peak,
+                                                      samples_over_threshold=tp.samples_over_threshold,
                                                       channel=tp.channel,
                                                       plane=self.channel_map.get_plane_from_offline_channel(tp.channel),
                                                       apa=self.channel_map.get_tpc_element_from_offline_channel(tp.channel),
                                                       adc_integral=tp.adc_integral,
                                                       adc_peak=tp.adc_peak,
                                                       detid=tp.detid,
-                                                      tp_type=tp.type,
-                                                      algorithm=tp.algorithm,
                                                       flag=tp.flag,
                                                       id_ta=i_ta) )
+        
         if len(tpd_list)==0:
             tpd_list=None
         return ta_list, tpd_list
