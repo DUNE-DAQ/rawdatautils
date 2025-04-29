@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
-project(rawdatautils VERSION 2.1.2)
+project(rawdatautils VERSION 2.1.3)
 
 find_package(daq-cmake REQUIRED)
 find_package(fmt REQUIRED)
