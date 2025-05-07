@@ -11,6 +11,7 @@
 #include "daqdataformats/Fragment.hpp"
 
 #include <cstdint>
+#include <iostream>
 #include <pybind11/numpy.h>
 
 namespace py = pybind11;
@@ -96,6 +97,7 @@ py::array_t<uint16_t> np_array_adc_data(void* data, int nframes){
   
   const auto adcs_per_channel     = fddetdataformats::DAPHNEFrame::s_num_adcs;
 
+  std::cout << "====================" << std::endl;
   py::array_t<uint16_t> ret(nframes * adcs_per_channel);
   auto ptr = static_cast<uint16_t*>(ret.request().ptr);
   for (size_t i=0; i<(size_t)nframes; ++i) {
@@ -105,7 +107,8 @@ py::array_t<uint16_t> np_array_adc_data(void* data, int nframes){
       ptr[i*adcs_per_channel + j] = fr->get_adc(j);
     }
     //for (size_t j=0; j<channels_per_daphne; ++j)
-    
+
+    std::cout << "Channel=" << static_cast<int>(fr->get_channel()) << ", timestamp0=" << fr->peaks_data.sample_max_0 << ", found0=" << fr->peaks_data.found_0 << ", timestamp1=" << fr->peaks_data.sample_max_1 << ", found1=" << fr->peaks_data.found_1 << ", timestamp2=" << fr->peaks_data.sample_max_2 << ", found2=" << fr->peaks_data.found_2 << ", timestamp3=" << fr->peaks_data.sample_max_3 << ", found3=" << fr->peaks_data.found_3 << ", timestamp4=" << fr->peaks_data.sample_max_4 << ", found4=" << fr->peaks_data.found_4 << std::endl;
   }
   ret.resize({nframes, adcs_per_channel});
 
