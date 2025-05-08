@@ -282,6 +282,65 @@ class WIBEthWaveformData(WIBEthChannelDataBase):
     fft_mag: np.ndarray
 
 @dataclass(order=True)
+class TDEEthHeaderData(FragmentDataBase):
+
+    #first frame only
+    channel_id: int
+    tde_header: int
+    version: int
+
+    #_idx arrays contain indices where value has changed from previous
+    #_vals arrays contain the values at those indices
+    errors_vals: np.ndarray
+    errors_idx: np.ndarray
+
+    #these take differences between successive values,
+    #and then, as above, look for differences in those differences
+    #store first value so the full array can be reconstructed
+    timestamp_dts_diff_vals: np.ndarray[int, np.float128]
+    timestamp_dts_diff_idx: np.ndarray
+    timestamp_dts_first: int
+
+    tai_time_diff_vals: np.ndarray[int, np.float128]
+    tai_time_diff_idx: np.ndarray
+    tai_time_first: int
+
+    n_frames: int
+    n_channels: int
+    sampling_period: int
+
+@dataclass(order=True)
+class TDEEthChannelDataBase(FragmentDataBase):
+
+    channel: int
+    plane: int
+    element: int
+    tde_chan: int
+
+    @classmethod
+    def index_names(cls):
+        return [ "run","trigger","sequence","src_id","channel" ]
+
+    def index_values(self):
+        return [ self.run, self.trigger, self.sequence, self.src_id, self.channel ]
+
+@dataclass(order=True)
+class TDEEthAnalysisData(TDEEthChannelDataBase):
+
+    adc_mean: float
+    adc_rms: float
+    adc_max: int
+    adc_min: int
+    adc_median: float
+
+@dataclass(order=True)
+class TDEEthWaveformData(TDEEthChannelDataBase):
+
+    timestamps: np.ndarray[int, np.float128]
+    adcs: np.ndarray
+    fft_mag: np.ndarray
+
+@dataclass(order=True)
 class DAPHNEStreamHeaderData(FragmentDataBase):
 
     n_channels: int
