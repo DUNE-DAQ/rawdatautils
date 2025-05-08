@@ -814,6 +814,7 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
         frh = frag.get_header()
         trigger_number = frh.trigger_number
         wvfm_data = None
+        ana_data = None
 
         get_ana_data = (self.ana_data_prescale is not None and (trigger_number % self.ana_data_prescale)==0)
         get_wvfm_data = (self.wvfm_data_prescale is not None and (trigger_number % self.wvfm_data_prescale)==0)
