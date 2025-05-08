@@ -5,6 +5,7 @@ from hdf5libs import HDF5RawDataFile
 import daqdataformats
 import detdataformats
 from rawdatautils.unpack.tde import *
+from rawdatautils.unpack.utils import *
 import detchannelmaps
 
 import click
@@ -16,10 +17,12 @@ import numpy as np
 @click.argument('filename', type=click.Path(exists=True))
 @click.option('--nrecords', '-n', default=-1, help='How many Trigger Records to process (default: all)')
 @click.option('--nskip', default=0, help='How many Trigger Records to skip (default: 0)')
-@click.option('--print-headers', is_flag=True, help="Print TDE16Frame headers")
+@click.option('--print-headers', is_flag=True, help="Print all TDE frame headers (default only first frame)")
+@click.option('--print-adc-stats', is_flag=True, help="Print ADC Pedestals/RMS")
+@click.option('--print-wvfm-samples', default=0, help='How many samples in each waveform to print.')
 @click.option('--det', default='VD_Top_TPC', help='Subdetector string (default: VD_TopTPC)')
 
-def main(filename, nrecords, nskip, print_headers, det):
+def main(filename, nrecords, nskip, print_headers, print_adc_stats, print_wvfm_samples, det):
 
     h5_file = HDF5RawDataFile(filename)
 
@@ -41,36 +44,62 @@ def main(filename, nrecords, nskip, print_headers, det):
         records_to_process = records[nskip:nrecords]
     print(f'Will process {len(records_to_process)} of {len(records)} records.')
 
+    unpacker = TDEEthUnpacker(channel_map=None,ana_data_prescale=1,wvfm_data_prescale=1)
+
     for r in records_to_process:
 
         print(f'Processing (Record Number,Sequence Number)=({r[0],r[1]})')
-        wib_geo_ids = h5_file.get_geo_ids_for_subdetector(r,detdataformats.DetID.string_to_subdetector(det))
+        geo_ids = h5_file.get_geo_ids_for_subdetector(r,detdataformats.DetID.string_to_subdetector(det))
 
-        for gid in wib_geo_ids:
-            geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
-            subdet = detdataformats.DetID.Subdetector(geo_info.det_id)
+        for gid in geo_ids:
+
+            det_stream = 0xffff & (gid >> 48);
+            det_slot = 0xffff & (gid >> 32);
+            det_crate = 0xffff & (gid >> 16);
+            det_id = 0xffff & gid;
+            subdet = detdataformats.DetID.Subdetector(det_id)
             det_name = detdataformats.DetID.subdetector_to_string(subdet)
-            print(f'\tProcessing subdetector {det_name}, crate {geo_info.det_crate}, slot {geo_info.det_slot}, link {geo_info.det_link}')
+            print(f'\tProcessing subdetector {det_name}, '
+                  f'crate {det_crate}, '
+                  f'slot {det_slot}, '
+                  f'stream {det_stream}')
 
+            #get the fragment
             frag = h5_file.get_frag(r,gid)
-            frag_hdr = frag.get_header()
-            frag_ts = frag.get_trigger_timestamp()
 
-            print(f'\tTrigger timestamp for fragment is {frag_ts}')
-            times = np_array_timestamp_data(frag);
-            channels = np_array_channel_data(frag);
-            n_frames = get_n_frames(frag);
-            print(f'\tFound {n_frames} TDE Frames.')
+            #perform unpacking of fragment and detector header info
+            frag_header = unpacker.get_frh_data(frag)[0]
 
-            
-            #n_frames = 5
-            #print header info
-            if print_headers :
-                for i in range (0,n_frames):
-                    print(f'{times[i]=} {channels[i]=}')
+            print('\t',frag_header)
 
-            print("\n")
-        
+            n_frames = unpacker.get_n_obj(frag)
+            if n_frames==0:
+                print('Found no TDE frames in this fragment.')
+                continue
+
+            daq_header_data = unpacker.get_daq_header_data(frag)
+            tde_header_data = unpacker.get_det_header_data(frag)
+
+            for i_tdeh, tdeh in enumerate(tde_header_data):
+                print(f'\tDAQ header {i_tdeh}: ',daq_header_data[i_tdeh])
+                print(f'\tTDE header {i_tdeh}: ',tdeh)
+                if not print_headers: break
+
+            tde_ana_data, tde_wvfm_data = unpacker.get_det_data_all(frag)
+
+            if print_adc_stats:
+                for tde_ana in tde_ana_data:
+                    print(f'\t\tTDE channel {tde_ana.channel} adc stats:')
+                    print('\t\t',tde_ana)
+
+            if print_wvfm_samples:
+                for tde_wvfm in tde_wvfm_data:
+                    print(f'\t\tTDE channel {tde_wvfm.channel} waveform:')
+                    for i_sample in range(print_wvfm_samples):
+                        ts_str = np.format_float_positional(tde_wvfm.timestamps[i_sample])
+                        print(f'\t\t\t {i_sample:>5}:  ts={ts_str:<25}  val={tde_wvfm.adcs[i_sample]}')
+
+
     #end record loop
 
     print(f'Processed all requested records')
