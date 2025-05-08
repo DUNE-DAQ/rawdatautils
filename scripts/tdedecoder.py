@@ -17,12 +17,11 @@ import numpy as np
 @click.argument('filename', type=click.Path(exists=True))
 @click.option('--nrecords', '-n', default=-1, help='How many Trigger Records to process (default: all)')
 @click.option('--nskip', default=0, help='How many Trigger Records to skip (default: 0)')
-@click.option('--print-headers', is_flag=True, help="Print all TDE frame headers (default only first frame)")
 @click.option('--print-adc-stats', is_flag=True, help="Print ADC Pedestals/RMS")
 @click.option('--print-wvfm-samples', default=0, help='How many samples in each waveform to print.')
 @click.option('--det', default='VD_Top_TPC', help='Subdetector string (default: VD_TopTPC)')
 
-def main(filename, nrecords, nskip, print_headers, print_adc_stats, print_wvfm_samples, det):
+def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det):
 
     h5_file = HDF5RawDataFile(filename)
 
@@ -73,8 +72,8 @@ def main(filename, nrecords, nskip, print_headers, print_adc_stats, print_wvfm_s
             print('\t',frag_header)
 
             n_frames = unpacker.get_n_obj(frag)
+            print(f'Found {n_frames} TDE frames in this fragment.')
             if n_frames==0:
-                print('Found no TDE frames in this fragment.')
                 continue
 
             daq_header_data = unpacker.get_daq_header_data(frag)
@@ -82,8 +81,7 @@ def main(filename, nrecords, nskip, print_headers, print_adc_stats, print_wvfm_s
 
             for i_tdeh, tdeh in enumerate(tde_header_data):
                 print(f'\tDAQ header {i_tdeh}: ',daq_header_data[i_tdeh])
-                print(f'\tTDE header {i_tdeh}: ',tdeh)
-                if not print_headers: break
+                print(f'\tTDE header info: ',tdeh)
 
             tde_ana_data, tde_wvfm_data = unpacker.get_det_data_all(frag)
 
