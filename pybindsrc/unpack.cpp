@@ -10,7 +10,7 @@
 #include "fddetdataformats/WIB2Frame.hpp"
 #include "fddetdataformats/DAPHNEFrame.hpp"
 #include "fddetdataformats/WIBEthFrame.hpp"
-#include "fddetdataformats/TDE16Frame.hpp"
+#include "fddetdataformats/TDEEthFrame.hpp"
 #include "daqdataformats/Fragment.hpp"
 
 #include <pybind11/numpy.h>
@@ -81,9 +81,10 @@ namespace daphne {
 
 namespace tde {
   extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint64_t> np_array_timestamp_data(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint64_t> np_array_channel_data(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc_data(void* data, uint32_t n_frames);
+  extern py::array_t<long double> np_array_timestamp(daqdataformats::Fragment const& frag);
+  extern py::array_t<long double> np_array_timestamp_data(void* data, uint32_t n_frames);
 
 }
 
@@ -134,8 +135,10 @@ register_unpack(py::module& m) {
 
   py::module_ tde_module = m.def_submodule("tde");
   tde_module.def("get_n_frames", &tde::get_n_frames);
+  tde_module.def("np_array_adc", &tde::np_array_adc);
+  tde_module.def("np_array_timestamp", &tde::np_array_timestamp);
+  tde_module.def("np_array_adc_data", &tde::np_array_adc_data);
   tde_module.def("np_array_timestamp_data", &tde::np_array_timestamp_data);
-  tde_module.def("np_array_channel_data", &tde::np_array_channel_data);
 
 }
 

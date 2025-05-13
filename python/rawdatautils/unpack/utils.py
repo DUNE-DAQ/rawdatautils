@@ -18,6 +18,15 @@ import h5py
 import numpy as np
 import numpy.fft
 
+class NullChannelMap:
+
+    def get_offline_channel_from_crate_slot_stream_chan(crate, slot, stream, ch):
+        return (ch + (stream << 10 ) + (slot << 18 ) + (crate << 22))
+    def get_plane_from_offline_channel(ch):
+        return -1
+    def get_tpc_element_from_offline_channel(ch):
+        return "Null"
+
 class Unpacker:
 
     is_fragment_unpacker = False
@@ -150,9 +159,9 @@ class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
 
     trg_obj = trgdataformats.TriggerPrimitive
 
-    def __init__(self,channel_map):
+    def __init__(self,channel_map=None):
         super().__init__()
-        self.channel_map = detchannelmaps.make_map(channel_map)
+        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
 
     def get_n_obj(self,frag):
         return int(frag.get_data_size()/self.trg_obj.sizeof())
@@ -189,9 +198,9 @@ class TriggerActivityUnpacker(TriggerDataUnpacker):
 
     trg_obj = trgdataformats.TriggerActivity
 
-    def __init__(self,channel_map):
+    def __init__(self,channel_map=None):
         super().__init__()
-        self.channel_map = detchannelmaps.make_map(channel_map)
+        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
 
     def get_n_obj(self,frag):
         frag_data_size = frag.get_data_size()
@@ -264,9 +273,9 @@ class TriggerCandidateUnpacker(TriggerDataUnpacker):
 
     trg_obj = trgdataformats.TriggerCandidate
 
-    def __init__(self,channel_map):
+    def __init__(self,channel_map=None):
         super().__init__()
-        self.channel_map = detchannelmaps.make_map(channel_map)
+        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
 
     def get_n_obj(self,frag):
         frag_data_size = frag.get_data_size()
@@ -388,9 +397,9 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
     SAMPLING_PERIOD = 32
     N_CHANNELS_PER_FRAME = 64
     
-    def __init__(self,channel_map,ana_data_prescale=1,wvfm_data_prescale=None):
+    def __init__(self,channel_map=None,ana_data_prescale=1,wvfm_data_prescale=None):
         super().__init__(ana_data_prescale=ana_data_prescale, wvfm_data_prescale=wvfm_data_prescale)
-        self.channel_map = detchannelmaps.make_map(channel_map)
+        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
 
     def get_n_obj(self,frag):
         return self.unpacker.get_n_frames(frag)
@@ -556,8 +565,136 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
                                              adcs=adcs[:,i_ch],
                                              fft_mag=ffts[:,i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
         
-        return ana_data, wvfm_data                
+        return ana_data, wvfm_data
 
+
+class TDEEthUnpacker(DetectorFragmentUnpacker):
+
+    unpacker = rawdatautils.unpack.tde
+    frame_obj = fddetdataformats.TDEEthFrame
+
+    SAMPLING_PERIOD = 31.25
+    N_CHANNELS_PER_FRAME = 64
+
+    def __init__(self,channel_map=None,ana_data_prescale=1,wvfm_data_prescale=None):
+        super().__init__(ana_data_prescale=ana_data_prescale, wvfm_data_prescale=wvfm_data_prescale)
+        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+
+    def get_n_obj(self,frag):
+        return self.unpacker.get_n_frames(frag)
+
+    def get_daq_header_version(self,frag):
+        return self.frame_obj(frag.get_data()).get_daqheader().version
+
+    def get_timestamp_first(self,frag):
+        return self.frame_obj(frag.get_data()).get_timestamp()
+
+    def get_det_data_version(self,frag):
+        return self.frame_obj(frag.get_data()).get_tdeheader().version
+
+    def get_det_crate_slot_stream(self,frag):
+        dh = self.frame_obj(frag.get_data()).get_daqheader()
+        return dh.det_id, dh.crate_id, dh.slot_id, dh.stream_id
+
+    def get_det_header_data(self,frag):
+        frh = frag.get_header()
+
+        n_frames = self.get_n_obj(frag)
+
+        errors_arr = np.empty(n_frames)
+        tai_time_arr = np.empty(n_frames)
+
+        for i in range(n_frames):
+            tdeh = self.frame_obj(frag.get_data(i*self.frame_obj.sizeof())).get_tdeheader()
+
+            errors_arr[i] = tdeh.tde_errors
+            tai_time_arr[i] = tdeh.TAItime
+
+        errors_change_idx, errors_change_val, _ = sparsify_array_diff_locs_and_vals(errors_arr)
+
+        tai_time_diff = np.diff(tai_time_arr)
+        tai_time_diff_change_idx, tai_time_diff_change_val, _ = sparsify_array_diff_locs_and_vals(tai_time_diff)
+
+        ts_arr = self.unpacker.np_array_timestamp(frag)
+        ts_diff_change_idx, ts_diff_change_val, _ = sparsify_array_diff_locs_and_vals(np.diff(ts_arr))
+
+        tdeh = self.frame_obj(frag.get_data()).get_tdeheader()
+        ts_diff_vals, ts_diff_counts = np.unique(np.diff(self.unpacker.np_array_timestamp(frag)),return_counts=True)
+        return [ TDEEthHeaderData(run=frh.run_number,
+                                  trigger=frh.trigger_number,
+                                  sequence=frh.sequence_number,
+                                  src_id=frh.element_id.id,
+                                  channel_id=tdeh.channel,
+                                  tde_header=tdeh.tde_header,
+                                  version=tdeh.version,
+                                  errors_vals=errors_change_val, errors_idx=errors_change_idx,
+                                  tai_time_diff_vals=tai_time_diff_change_val,
+                                  tai_time_diff_idx=tai_time_diff_change_idx,
+                                  tai_time_first=tai_time_arr[0],
+                                  timestamp_dts_diff_vals=ts_diff_change_val,
+                                  timestamp_dts_diff_idx=ts_diff_change_idx,
+                                  timestamp_dts_first=ts_arr[0],
+                                  n_frames=n_frames,
+                                  n_channels=self.N_CHANNELS_PER_FRAME,
+                                  sampling_period=self.SAMPLING_PERIOD) ]
+
+    def get_det_data_all(self,frag):
+        frh = frag.get_header()
+        trigger_number = frh.trigger_number
+
+        get_ana_data = (self.ana_data_prescale is not None and (trigger_number % self.ana_data_prescale)==0)
+        get_wvfm_data = (self.wvfm_data_prescale is not None and (trigger_number % self.wvfm_data_prescale)==0)
+
+        #print(f'\t\tTrigger number {trigger_number}: get_ana_data? {get_ana_data} get_wvfm_data? {get_wvfm_data}')
+
+        if not (get_ana_data or get_wvfm_data):
+            return None,None
+
+        ana_data = None
+        wvfm_data = None
+
+        adcs = self.unpacker.np_array_adc(frag)
+        _, crate, slot, stream = self.get_det_crate_slot_stream(frag)
+        channels = [ self.channel_map.get_offline_channel_from_crate_slot_stream_chan(crate, slot, stream, c) for c in range(self.N_CHANNELS_PER_FRAME) ]
+        planes = [ self.channel_map.get_plane_from_offline_channel(uc) for uc in channels ]
+        elements = [ self.channel_map.get_tpc_element_from_offline_channel(uc) for uc in channels ]
+        tde_chans = range(self.N_CHANNELS_PER_FRAME)
+
+        if get_ana_data:
+            adc_mean = np.mean(adcs,axis=0)
+            adc_rms = np.std(adcs,axis=0)
+            adc_max = np.max(adcs,axis=0)
+            adc_min = np.min(adcs,axis=0)
+            adc_median = np.median(adcs,axis=0)
+            ana_data = [ TDEEthAnalysisData(run=frh.run_number,
+                                            trigger=frh.trigger_number,
+                                            sequence=frh.sequence_number,
+                                            src_id=frh.element_id.id,
+                                            channel=channels[i_ch],
+                                            plane=planes[i_ch],
+                                            element=elements[i_ch],
+                                            tde_chan=tde_chans[i_ch],
+                                            adc_mean=adc_mean[i_ch],
+                                            adc_rms=adc_rms[i_ch],
+                                            adc_max=adc_max[i_ch],
+                                            adc_min=adc_min[i_ch],
+                                            adc_median=adc_median[i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
+        if get_wvfm_data:
+            timestamps = self.unpacker.np_array_timestamp(frag)
+            ffts = np.abs(np.fft.rfft(adcs,axis=0))
+            wvfm_data = [ TDEEthWaveformData(run=frh.run_number,
+                                             trigger=frh.trigger_number,
+                                             sequence=frh.sequence_number,
+                                             src_id=frh.element_id.id,
+                                             channel=channels[i_ch],
+                                             plane=planes[i_ch],
+                                             element=elements[i_ch],
+                                             tde_chan=tde_chans[i_ch],
+                                             timestamps=timestamps,
+                                             adcs=adcs[:,i_ch],
+                                             fft_mag=ffts[:,i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
+
+        return ana_data, wvfm_data
 
 class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
 
