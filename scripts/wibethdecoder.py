@@ -107,7 +107,7 @@ def main(filenames, nrecords, nskip, channel_map, print_headers, print_adc_stats
                         offline_ch_plane_dict[gid] = np.full(64,9999)
                     else:
                         dh = wf.get_daqheader()
-                        offline_ch_num_dict[gid] = np.array([ch_map.get_offline_channel_from_crate_slot_stream_chan(dh.crate_id, dh.slot_id, dh.stream_id, c) for c in range(64)])
+                        offline_ch_num_dict[gid] = np.array([ch_map.get_offline_channel_from_det_crate_slot_stream_chan(dh.det_id, dh.crate_id, dh.slot_id, dh.stream_id, c) for c in range(64)])
                         offline_ch_plane_dict[gid] = np.array([ ch_map.get_plane_from_offline_channel(uc) for uc in offline_ch_num_dict[gid] ])
 
 

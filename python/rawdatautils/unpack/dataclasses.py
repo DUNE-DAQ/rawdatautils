@@ -142,7 +142,7 @@ class TriggerPrimitiveData(FragmentDataBase):
     samples_over_threshold: int
     channel: int
     plane: int
-    apa: str
+    element: int
     adc_integral: int
     adc_peak: int
     detid: int
@@ -160,7 +160,7 @@ class TriggerActivityData(FragmentDataBase):
     channel_end: int
     channel_peak: int
     plane: int
-    apa: str
+    element: int
     adc_integral: int
     adc_peak: int
     detid: int
@@ -255,7 +255,7 @@ class WIBEthChannelDataBase(FragmentDataBase):
     
     channel: int
     plane: int
-    apa: str
+    element: int
     wib_chan: int
     
     @classmethod
