@@ -48,7 +48,10 @@ def main(filenames, nrecords, nskip, channel_map):
         #have channel numbers per geoid in here
         ch_map = None
         if channel_map is not None:
-            ch_map = detchannelmaps.make_map(channel_map)
+            if 'TPC' in channel_map:
+                ch_map = detchannelmaps.make_tpc_map(channel_map)
+            elif 'PDS' in channel_map:
+                ch_map = detchannelmaps.make_pds_map(channel_map)
 
         with h5py.File(h5_file.get_file_name(), 'r') as f:
             record_type = f.attrs["record_type"]

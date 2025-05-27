@@ -52,7 +52,7 @@ def main(filenames, nrecords, nskip, channel_map, print_headers, print_adc_stats
         #have channel numbers per geoid in here
         ch_map = None
         if channel_map is not None:
-            ch_map = detchannelmaps.make_map(channel_map)
+            ch_map = detchannelmaps.make_tpc_map(channel_map)
         offline_ch_num_dict = {}
         offline_ch_plane_dict = {}
 

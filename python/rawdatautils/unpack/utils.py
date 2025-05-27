@@ -163,7 +163,12 @@ class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
 
     def __init__(self,channel_map=None):
         super().__init__()
-        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+        if 'TPC' in channel_map:
+            self.channel_map = detchannelmaps.make_tpc_map(channel_map)
+        elif 'PDS' in channel_map:
+            self.channel_map = detchannelmaps.make_pds_map(channel_map)
+        else:
+            self.channel_map = NullChannelMap
 
     def get_n_obj(self,frag):
         return int(frag.get_data_size()/self.trg_obj.sizeof())
@@ -203,7 +208,12 @@ class TriggerActivityUnpacker(TriggerDataUnpacker):
 
     def __init__(self,channel_map=None):
         super().__init__()
-        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+        if 'TPC' in channel_map:
+            self.channel_map = detchannelmaps.make_tpc_map(channel_map)
+        elif 'PDS' in channel_map:
+            self.channel_map = detchannelmaps.make_pds_map(channel_map)
+        else:
+            self.channel_map = NullChannelMap
 
     def get_n_obj(self,frag):
         frag_data_size = frag.get_data_size()
@@ -280,7 +290,12 @@ class TriggerCandidateUnpacker(TriggerDataUnpacker):
 
     def __init__(self,channel_map=None):
         super().__init__()
-        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+        if 'TPC' in channel_map:
+            self.channel_map = detchannelmaps.make_tpc_map(channel_map)
+        elif 'PDS' in channel_map:
+            self.channel_map = detchannelmaps.make_pds_map(channel_map)
+        else:
+            self.channel_map = NullChannelMap
 
     def get_n_obj(self,frag):
         frag_data_size = frag.get_data_size()
@@ -405,7 +420,7 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
     
     def __init__(self,channel_map=None,ana_data_prescale=1,wvfm_data_prescale=None):
         super().__init__(ana_data_prescale=ana_data_prescale, wvfm_data_prescale=wvfm_data_prescale)
-        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+        self.channel_map = detchannelmaps.make_tpc_map(channel_map) if channel_map else NullChannelMap
 
     def get_n_obj(self,frag):
         return self.unpacker.get_n_frames(frag)
@@ -584,7 +599,12 @@ class TDEEthUnpacker(DetectorFragmentUnpacker):
 
     def __init__(self,channel_map=None,ana_data_prescale=1,wvfm_data_prescale=None):
         super().__init__(ana_data_prescale=ana_data_prescale, wvfm_data_prescale=wvfm_data_prescale)
-        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+        if 'TPC' in channel_map:
+            self.channel_map = detchannelmaps.make_tpc_map(channel_map)
+        elif 'PDS' in channel_map:
+            self.channel_map = detchannelmaps.make_pds_map(channel_map)
+        else:
+            self.channel_map = NullChannelMap
 
     def get_n_obj(self,frag):
         return self.unpacker.get_n_frames(frag)
