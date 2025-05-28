@@ -24,7 +24,7 @@ def main(filename, tr_count, channel_map):
     #have channel numbers per geoid in here
     ch_map = None
     if channel_map is not None:
-        ch_map = detchannelmaps.make_map(channel_map)
+        ch_map = detchannelmaps.make_tpc_map(channel_map)
     offline_ch_num_dict = {}
 
     for r in records_to_process:

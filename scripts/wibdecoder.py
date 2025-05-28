@@ -54,7 +54,7 @@ def main(filenames, nrecords, nskip, channel_map, print_headers, print_adc_stats
         #have channel numbers per geoid in here
         ch_map = None
         if channel_map is not None:
-            ch_map = detchannelmaps.make_map(channel_map)
+            ch_map = detchannelmaps.make_tpc_map(channel_map)
         offline_ch_num_dict = {}
         offline_ch_plane_dict = {}
 
@@ -126,10 +126,10 @@ def main(filenames, nrecords, nskip, channel_map, print_headers, print_adc_stats
                         crate, slot, stream, nchans = None, None, None, None
                         if frag_type==daqdataformats.FragmentType.kWIBEth:
                             dh = wf.get_daqheader()
-                            offline_ch_num_dict[gid] = np.array([ch_map.get_offline_channel_from_crate_slot_stream_chan(dh.crate_id, dh.slot_id, dh.stream_id, c) for c in range(64)])
+                            offline_ch_num_dict[gid] = np.array([ch_map.get_offline_channel_from_det_crate_slot_stream_chan(dh.det_id, dh.crate_id, dh.slot_id, dh.stream_id, c) for c in range(64)])
                         else:
                             wh = wf.get_header()
-                            offline_ch_num_dict[gid] = np.array([ch_map.get_offline_channel_from_crate_slot_fiber_chan(wh.crate, wh.slot, wh.link, c) for c in range(256)])
+                            offline_ch_num_dict[gid] = np.array([ch_map.get_offline_channel_from_det_crate_slot_stream_chan(wh.detector_id, wh.crate, wh.slot, wh.link, c) for c in range(256)])
                         offline_ch_plane_dict[gid] = np.array([ ch_map.get_plane_from_offline_channel(uc) for uc in offline_ch_num_dict[gid] ])
 
 
