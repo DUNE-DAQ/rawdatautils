@@ -20,11 +20,13 @@ import numpy.fft
 
 class NullChannelMap:
 
-    def get_offline_channel_from_crate_slot_stream_chan(crate, slot, stream, ch):
+    def get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, ch):
         return (ch + (stream << 10 ) + (slot << 18 ) + (crate << 22))
     def get_plane_from_offline_channel(ch):
         return -1
-    def get_tpc_element_from_offline_channel(ch):
+    def get_element_id_from_offline_channel(ch):
+        return 0xffff
+    def get_element_name_from_offline_channel(ch):
         return "Null"
 
 class Unpacker:
@@ -161,7 +163,12 @@ class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
 
     def __init__(self,channel_map=None):
         super().__init__()
-        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+        if 'TPC' in channel_map:
+            self.channel_map = detchannelmaps.make_tpc_map(channel_map)
+        elif 'PDS' in channel_map:
+            self.channel_map = detchannelmaps.make_pds_map(channel_map)
+        else:
+            self.channel_map = NullChannelMap
 
     def get_n_obj(self,frag):
         return int(frag.get_data_size()/self.trg_obj.sizeof())
@@ -177,6 +184,7 @@ class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
         tpd_list = []
         for i_tp in range(self.get_n_obj(frag)):
             tp = self.trg_obj(frag.get_data(i_tp*self.trg_obj.sizeof()))
+            ch_info = self.channel_map.get_channel_info_from_offline_channel(tp.channel)
             tpd_list.append( TriggerPrimitiveData(run=frh.run_number,
                                                   trigger=frh.trigger_number,
                                                   sequence=frh.sequence_number,
@@ -186,7 +194,7 @@ class TriggerPrimitiveUnpacker(TriggerDataUnpacker):
                                                   samples_over_threshold=tp.samples_over_threshold,
                                                   channel=tp.channel,
                                                   plane=self.channel_map.get_plane_from_offline_channel(tp.channel),
-                                                  apa=self.channel_map.get_tpc_element_from_offline_channel(tp.channel),
+                                                  element=ch_info.element,
                                                   adc_integral=tp.adc_integral,
                                                   adc_peak=tp.adc_peak,
                                                   detid=tp.detid,
@@ -200,7 +208,12 @@ class TriggerActivityUnpacker(TriggerDataUnpacker):
 
     def __init__(self,channel_map=None):
         super().__init__()
-        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+        if 'TPC' in channel_map:
+            self.channel_map = detchannelmaps.make_tpc_map(channel_map)
+        elif 'PDS' in channel_map:
+            self.channel_map = detchannelmaps.make_pds_map(channel_map)
+        else:
+            self.channel_map = NullChannelMap
 
     def get_n_obj(self,frag):
         frag_data_size = frag.get_data_size()
@@ -226,6 +239,7 @@ class TriggerActivityUnpacker(TriggerDataUnpacker):
         for i_ta in range(self.get_n_obj(frag)):
             ta= self.trg_obj(frag.get_data(size_so_far))
             size_so_far = size_so_far + ta.sizeof()
+            ch_info_ta = self.channel_map.get_channel_info_from_offline_channel(ta.data.channel_peak)
             ta_list.append( TriggerActivityData(run=frh.run_number,
                                                 trigger=frh.trigger_number,
                                                 sequence=frh.sequence_number,
@@ -239,7 +253,7 @@ class TriggerActivityUnpacker(TriggerDataUnpacker):
                                                 channel_end=ta.data.channel_end,
                                                 channel_peak=ta.data.channel_peak,
                                                 plane=self.channel_map.get_plane_from_offline_channel(ta.data.channel_peak),
-                                                apa=self.channel_map.get_tpc_element_from_offline_channel(ta.data.channel_peak),
+                                                element=ch_info_ta.element,
                                                 adc_integral=ta.data.adc_integral,
                                                 adc_peak=ta.data.adc_peak,
                                                 detid=ta.data.detid,
@@ -249,6 +263,7 @@ class TriggerActivityUnpacker(TriggerDataUnpacker):
                                                 id_tc=-1) )
             for i_tp in range(len(ta)):
                 tp = ta[i_tp]
+                ch_info_tp = self.channel_map.get_channel_info_from_offline_channel(tp.channel)
                 tpd_list.append( TriggerPrimitiveData(run=frh.run_number,
                                                       trigger=frh.trigger_number,
                                                       sequence=frh.sequence_number,
@@ -258,7 +273,7 @@ class TriggerActivityUnpacker(TriggerDataUnpacker):
                                                       samples_over_threshold=tp.samples_over_threshold,
                                                       channel=tp.channel,
                                                       plane=self.channel_map.get_plane_from_offline_channel(tp.channel),
-                                                      apa=self.channel_map.get_tpc_element_from_offline_channel(tp.channel),
+                                                      element=ch_info_tp.element,
                                                       adc_integral=tp.adc_integral,
                                                       adc_peak=tp.adc_peak,
                                                       detid=tp.detid,
@@ -275,7 +290,12 @@ class TriggerCandidateUnpacker(TriggerDataUnpacker):
 
     def __init__(self,channel_map=None):
         super().__init__()
-        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+        if 'TPC' in channel_map:
+            self.channel_map = detchannelmaps.make_tpc_map(channel_map)
+        elif 'PDS' in channel_map:
+            self.channel_map = detchannelmaps.make_pds_map(channel_map)
+        else:
+            self.channel_map = NullChannelMap
 
     def get_n_obj(self,frag):
         frag_data_size = frag.get_data_size()
@@ -315,6 +335,7 @@ class TriggerCandidateUnpacker(TriggerDataUnpacker):
                                                 n_tas=len(tc) ) )
             for i_ta in range(len(tc)):
                 ta = tc[i_ta]
+                ch_info_ta = self.channel_map.get_channel_info_from_offline_channel(ta.data.channel_peak)
                 ta_list.append( TriggerActivityData(run=frh.run_number,
                                                     trigger=frh.trigger_number,
                                                     sequence=frh.sequence_number,
@@ -328,7 +349,7 @@ class TriggerCandidateUnpacker(TriggerDataUnpacker):
                                                     channel_end=ta.channel_end,
                                                     channel_peak=ta.channel_peak,
                                                     plane=self.channel_map.get_plane_from_offline_channel(ta.channel_peak),
-                                                    apa=self.channel_map.get_tpc_element_from_offline_channel(ta.channel_peak),
+                                                    element=ch_info_ta.element,
                                                     adc_integral=ta.adc_integral,
                                                     adc_peak=ta.adc_peak,
                                                     detid=ta.detid,
@@ -399,7 +420,7 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
     
     def __init__(self,channel_map=None,ana_data_prescale=1,wvfm_data_prescale=None):
         super().__init__(ana_data_prescale=ana_data_prescale, wvfm_data_prescale=wvfm_data_prescale)
-        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+        self.channel_map = detchannelmaps.make_tpc_map(channel_map) if channel_map else NullChannelMap
 
     def get_n_obj(self,frag):
         return self.unpacker.get_n_frames(frag)
@@ -525,10 +546,10 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
         wvfm_data = None
         
         adcs = self.unpacker.np_array_adc(frag)
-        _, crate, slot, stream = self.get_det_crate_slot_stream(frag)
-        channels = [ self.channel_map.get_offline_channel_from_crate_slot_stream_chan(crate, slot, stream, c) for c in range(self.N_CHANNELS_PER_FRAME) ]
+        det, crate, slot, stream = self.get_det_crate_slot_stream(frag)
+        channels = [ self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, c) for c in range(self.N_CHANNELS_PER_FRAME) ]
         planes = [ self.channel_map.get_plane_from_offline_channel(uc) for uc in channels ]
-        apas = [ self.channel_map.get_tpc_element_from_offline_channel(uc) for uc in channels ]
+        elements = [ self.channel_map.get_element_id_from_offline_channel(uc) for uc in channels ]
         wib_chans = range(self.N_CHANNELS_PER_FRAME)
         
         if get_ana_data:
@@ -543,7 +564,7 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
                                             src_id=frh.element_id.id,
                                             channel=channels[i_ch],
                                             plane=planes[i_ch],
-                                            apa=apas[i_ch],
+                                            element=elements[i_ch],
                                             wib_chan=wib_chans[i_ch],
                                             adc_mean=adc_mean[i_ch],
                                             adc_rms=adc_rms[i_ch],
@@ -559,7 +580,7 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
                                              src_id=frh.element_id.id,
                                              channel=channels[i_ch],
                                              plane=planes[i_ch],
-                                             apa=apas[i_ch],
+                                             element=elements[i_ch],
                                              wib_chan=wib_chans[i_ch],
                                              timestamps=timestamps,
                                              adcs=adcs[:,i_ch],
@@ -578,7 +599,12 @@ class TDEEthUnpacker(DetectorFragmentUnpacker):
 
     def __init__(self,channel_map=None,ana_data_prescale=1,wvfm_data_prescale=None):
         super().__init__(ana_data_prescale=ana_data_prescale, wvfm_data_prescale=wvfm_data_prescale)
-        self.channel_map = detchannelmaps.make_map(channel_map) if channel_map else NullChannelMap
+        if 'TPC' in channel_map:
+            self.channel_map = detchannelmaps.make_tpc_map(channel_map)
+        elif 'PDS' in channel_map:
+            self.channel_map = detchannelmaps.make_pds_map(channel_map)
+        else:
+            self.channel_map = NullChannelMap
 
     def get_n_obj(self,frag):
         return self.unpacker.get_n_frames(frag)
@@ -654,10 +680,10 @@ class TDEEthUnpacker(DetectorFragmentUnpacker):
         wvfm_data = None
 
         adcs = self.unpacker.np_array_adc(frag)
-        _, crate, slot, stream = self.get_det_crate_slot_stream(frag)
-        channels = [ self.channel_map.get_offline_channel_from_crate_slot_stream_chan(crate, slot, stream, c) for c in range(self.N_CHANNELS_PER_FRAME) ]
+        det, crate, slot, stream = self.get_det_crate_slot_stream(frag)
+        channels = [ self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, c) for c in range(self.N_CHANNELS_PER_FRAME) ]
         planes = [ self.channel_map.get_plane_from_offline_channel(uc) for uc in channels ]
-        elements = [ self.channel_map.get_tpc_element_from_offline_channel(uc) for uc in channels ]
+        elements = [ self.channel_map.get_element_id_from_offline_channel(uc) for uc in channels ]
         tde_chans = range(self.N_CHANNELS_PER_FRAME)
 
         if get_ana_data:
