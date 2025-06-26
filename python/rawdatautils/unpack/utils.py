@@ -62,6 +62,22 @@ class SourceIDUnpacker(Unpacker):
         #in_data = sid
         return { "sid": self.get_srcid_data(in_data) }
 
+class TPStreamHeaderUnpacker(Unpacker):
+
+    is_fragment_unpacker = False
+
+    def get_tsh_data(self,tsh,n_fragments):
+        return [TPStreamData(
+            run = tsh.run_number,
+            timeslice = tsh.timeslice_number,
+            timeslice_header_marker = tsh.timeslice_header_marker,
+            version = tsh.version,
+            n_fragments = n_fragments
+        )]
+    def get_all_data(self,in_data):
+        return { "tsh": self.get_tsh_data(in_data[0],in_data[1]) }
+
+
 class TriggerRecordHeaderUnpacker(Unpacker):
 
     is_fragment_unpacker = False
