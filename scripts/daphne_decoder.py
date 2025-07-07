@@ -65,12 +65,13 @@ def print_links(pds_geo_ids):
 @click.option('--det', default='HD_PDS', help='Subdetector string (default: HD_PDS)')
 @click.option('--nrecords', '-n', default=-1, help='How many Trigger Records to process (default: all)')
 @click.option('--nskip', default=0, help='How many Trigger Records to skip (default: 0)')
+@click.option('--channel-map', default=None, help="Channel map to load (default: None)")
 @click.option('--summary', is_flag=True, help="Print checks summary (currently broken?)")
 @click.option('--check_ts', is_flag=True, help="Print timestamps check (works for streaming data)")
 @click.option('--adc_stats', is_flag=True, help="Print adc stats (works for streaming data)")
 @click.option('--print_frame_timestamps', is_flag=True, help="Print individual frame timestamps (can be very verbose)")
 
-def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary, print_frame_timestamps):
+def main(filename, det, nrecords, nskip, channel_map, adc_stats, check_ts, summary, print_frame_timestamps):
 
     h5_file   = HDF5RawDataFile(filename)
     records   = h5_file.get_all_record_ids()
@@ -94,6 +95,12 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary, print_fra
 
     print(f'Will process {len(records_to_process)} of {len(records)} records.')
     
+    #have channel numbers per geoid in here
+    ch_map = None
+    if channel_map is not None:
+        ch_map = detchannelmaps.make_pds_map(channel_map)
+    offline_ch_num_dict = {}
+
     for r in records_to_process:
 
         pds_geo_ids    = list(h5_file.get_geo_ids_for_subdetector(r,detdataformats.DetID.string_to_subdetector(det)))
@@ -110,7 +117,7 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary, print_fra
         n_channels      = 0
 
 
-        headline = f"{'CRATE':^10} {'SLOT':^10} {'LINK':^10} {'Fragment Type':^15} {'CHANNEL':^10} "
+        headline = f"{'CRATE':^10} {'SLOT':^10} {'LINK':^10} {'Fragment Type':^15} {'CHANNEL':^10} {'OFF CHANNEL':^15}"
         
         if adc_stats:
             headline += f" {'MEAN':^10} {'Std.dev.':^10}"
@@ -158,19 +165,25 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary, print_fra
                 n_channels = len(np.unique(channels))
                 #print(f'Frame size = {first_frame.sizeof()}, number of timestamps, adcs, channels, channels_in_list = {len(timestamps)}, {len(adcs)}, {len(channels)}, {len(np_array_channels_stream(frag))}')
 
+            #fill channel map info if needed
+            if(offline_ch_num_dict.get(gid) is None):
+                if channel_map is None:
+                    offline_ch_num_dict[gid] = np.arange(48)
+                else:
+                    dh = first_frame.get_daqheader()
+                    offline_ch_num_dict[gid] = np.array([ch_map.get_offline_channel_from_det_crate_slot_stream_chan(dh.det_id, dh.crate_id, dh.slot_id, dh.link_id, c) for c in range(48)])
+
+
             trigger_stamps.append(frag.get_trigger_timestamp())
 
             daq_header = first_frame.get_daqheader()
-            print(daq_header,daq_header.version)
+            #print(daq_header,daq_header.version)
 
-            daq_header = first_frame.get_daqheader()
-            print(daq_header,daq_header.version)
-            
             ts_status = f"{bcolors.FAIL}{'Problems':^20}{bcolors.ENDC}"
 
             for ch_num in range(n_channels):
                 scanned_channels += 1
-                line = f"{det_crate:^10} {det_slot:^10} {det_link:^10} {dmodes[fragType] :^15} {channels[ch_num]:^10} "
+                line = f"{det_crate:^10} {det_slot:^10} {det_link:^10} {dmodes[fragType] :^15} {channels[ch_num]:^10} {offline_ch_num_dict[gid][channels[ch_num]]:^15}"
 
                 if np.mean(adcs[:]) > 10:
                     active_channels += 1
@@ -197,7 +210,7 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary, print_fra
                 temp_dashes_string = "-"*110
                 print(f"    {temp_dashes_string}")
                 print("      --> Frame timestamp details <--")
-                print("      Index  Channel  DTS Timestamp (ticks)  DTS Timestamp (time string)")
+                print("      Index  PDS Ch  Off Ch  DTS Timestamp (ticks)  DTS Timestamp (time string)")
                 print(f"    {temp_dashes_string}")
                 loop_counter = 0;
                 for idx in range(len(timestamps)):
@@ -206,9 +219,9 @@ def main(filename, det, nrecords, nskip, adc_stats, check_ts, summary, print_fra
                     ts_nsec = float(timestamps[idx])/62500000.0
                     time_string = datetime.datetime.fromtimestamp(ts_nsec)
                     if fragType == FragmentType.kDAPHNEStream.value:
-                        print(f'     {(idx/64):>5}   {temp_channels[loop_counter]}    {timestamps[idx]:>20}    {str(time_string):<26}')
+                        print(f'     {(idx/64):>5}   {temp_channels[loop_counter]}   {offline_ch_num_dict[gid][temp_channels[loop_counter]]}    {timestamps[idx]:>20}    {str(time_string):<26}')
                     else:
-                        print(f'     {idx:>5}   {channels[idx]:>5}    {timestamps[idx]:>20}    {str(time_string):<26}')
+                        print(f'     {idx:>5}   {channels[idx]:>5}   {offline_ch_num_dict[gid][channels[idx]]:>5}    {timestamps[idx]:>20}    {str(time_string):<26}')
                     loop_counter += 1
                 print()
 
