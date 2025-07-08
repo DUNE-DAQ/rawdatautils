@@ -19,7 +19,7 @@ import numpy as np
 @click.option('--nskip', default=0, help='How many Trigger Records to skip (default: 0)')
 @click.option('--print-adc-stats', is_flag=True, help="Print ADC Pedestals/RMS")
 @click.option('--print-wvfm-samples', default=0, help='How many samples in each waveform to print.')
-@click.option('--det', default='VD_Top_TPC', help='Subdetector string (default: VD_TopTPC)')
+@click.option('--det', default='VD_TopTPC', help='Subdetector string (default: VD_TopTPC)')
 
 def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det):
 
