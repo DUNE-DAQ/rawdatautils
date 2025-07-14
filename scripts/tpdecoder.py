@@ -84,7 +84,7 @@ def main(filenames, nrecords, nskip, channel_map):
                     apa="Unknown"
                     if ch_map is not None and (tp.detid==3 or tp.detid==10):
                         plane=ch_map.get_plane_from_offline_channel(tp.channel)
-                        apa=ch_map.get_tpc_element_from_offline_channel(tp.channel)
+                        element=ch_map.get_element_id_from_offline_channel(tp.channel)
                         
                     tpd = TriggerPrimitiveData(run=frag.get_run_number(),
                                                trigger=frag.get_trigger_number(),
@@ -95,7 +95,7 @@ def main(filenames, nrecords, nskip, channel_map):
                                                samples_over_threshold=tp.samples_over_threshold,
                                                channel=tp.channel,
                                                plane=plane,
-                                               apa=apa,
+                                               element=apa,
                                                adc_integral=tp.adc_integral,
                                                adc_peak=tp.adc_peak,
                                                detid=tp.detid,
