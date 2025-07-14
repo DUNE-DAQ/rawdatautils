@@ -125,32 +125,39 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, check_ts, summa
         if check_ts:
             headline += f" {'TS stats':^17} {'TS Check':^18}"
 
-        trg_ts_nsec = float(h5_file.get_frag(r,pds_geo_ids[0]).get_trigger_timestamp())/62500000.0
-        trg_time_string = datetime.datetime.fromtimestamp(trg_ts_nsec)
+        #trg_ts_nsec = float(h5_file.get_frag(r,pds_geo_ids[0]).get_trigger_timestamp())/62500000.0
+        #trg_time_string = datetime.datetime.fromtimestamp(trg_ts_nsec)
 
-        print("-"*114)
-        print(f"{'RECORD':>50}: {r[0]:<15} {str(trg_time_string):^26}")
-        print("-"*114)
-        print(headline)
-        print("-"*114)
+        #print("-"*114)
+        #print(f"{'RECORD':>50}: {r[0]:<15} {str(trg_time_string):^26}")
+        #print("-"*114)
+        #print(headline)
+        #print("-"*114)
 
         scanned_channels = 0
         tslot = -1
 
         for gid in pds_geo_ids:
+
+            print(gid)
             
-            frag     = h5_file.get_frag(r,gid)
             det_link = 0xffff & (gid >> 48);
             det_slot = 0xffff & (gid >> 32);
             det_crate = 0xffff & (gid >> 16);
             det_id = 0xffff & gid;
             subdet = detdataformats.DetID.Subdetector(det_id)
             det_name = detdataformats.DetID.subdetector_to_string(subdet)
+
+            print(det_id,det_crate,det_slot,det_link)
+            print(r)
+            
+            frag     = h5_file.get_frag(r,gid)
             fragType = frag.get_header().fragment_type
 
             if fragType == FragmentType.kDAPHNE.value:
             
                 first_frame = fddetdataformats.DAPHNEFrame(frag.get_data())
+                n_frames   = get_n_frames(frag)
                 timestamps = np_array_timestamp(frag)
                 adcs       = np_array_adc(frag)
                 channels   = np_array_channels(frag)
@@ -159,6 +166,7 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, check_ts, summa
             elif fragType == FragmentType.kDAPHNEStream.value:
 
                 first_frame = fddetdataformats.DAPHNEStreamFrame(frag.get_data())
+                n_frames   = get_n_frames_stream(frag)
                 timestamps = np_array_timestamp_stream(frag)
                 adcs       = np_array_adc_stream(frag)
                 channels   = np_array_channels_stream(frag)[0]
@@ -231,8 +239,27 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, check_ts, summa
                 tslot = det_slot
                 print("")
 
+            if True:
+                dict_tp_ch_ts = {}
+                for i_f in range(n_frames):
+                    frame = fddetdataformats.DAPHNEFrame(frag.get_data(i_f*fddetdataformats.DAPHNEFrame.sizeof()))
+                    peaks_data = frame.get_peaks_data()
+                    print(f'Analyzing Frame {i_f}: TS={frame.get_timestamp()} CH={frame.get_channel()}')
+                    if frame.get_channel() not in dict_tp_ch_ts.keys():
+                        dict_tp_ch_ts[frame.get_channel()] = set()
+                    for i_p in range(5):
+                        if not peaks_data.is_found(i_p): continue
+                        print(f'\tTP Peak {i_p} at ts={peaks_data.get_sample_start(i_p)}, adc_integral={peaks_data.get_adc_integral(i_p)}, adc_max={peaks_data.get_adc_max(i_p)}, t_over_baseline={peaks_data.get_samples_over_baseline(i_p)}, n_subpeaks={peaks_data.get_num_subpeaks(i_p)}')
+                        if (frame.get_timestamp()+peaks_data.get_sample_start(i_p)) in dict_tp_ch_ts[frame.get_channel()]:
+                            print (f"ALREADY FOUND TP! CH={frame.get_channel()}, TS={frame.get_timestamp()+peaks_data.get_sample_start(i_p)}")
+                        else:
+                            dict_tp_ch_ts[frame.get_channel()].add(frame.get_timestamp()+peaks_data.get_sample_start(i_p))
+                        
+
+
         print(f"Number of active/total channels \t-- {active_channels:>20}/{scanned_channels}\n")
 
+        
     if summary:
 
         print("-"*80)
