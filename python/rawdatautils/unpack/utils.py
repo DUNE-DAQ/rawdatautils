@@ -335,7 +335,7 @@ class TriggerCandidateUnpacker(TriggerDataUnpacker):
                                                 n_tas=len(tc) ) )
             for i_ta in range(len(tc)):
                 ta = tc[i_ta]
-                ch_info_ta = self.channel_map.get_channel_info_from_offline_channel(ta.data.channel_peak)
+                ch_info_ta = self.channel_map.get_channel_info_from_offline_channel(ta.channel_peak)
                 ta_list.append( TriggerActivityData(run=frh.run_number,
                                                     trigger=frh.trigger_number,
                                                     sequence=frh.sequence_number,
