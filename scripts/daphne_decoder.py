@@ -24,6 +24,10 @@ import datetime
 import time
 import numpy as np
 import time
+
+from rawdatautils.unpack.dataclasses import dts_to_datetime
+
+
 #import matplotlib.pyplot as plt
 
 class bcolors:
@@ -67,7 +71,7 @@ def print_links(pds_geo_ids):
 @click.option('--nrecords', '-n', default=-1, help='How many Trigger Records to process (default: all)')
 @click.option('--nskip', default=0, help='How many Trigger Records to skip (default: 0)')
 @click.option('--channel-map', default=None, help="Channel map to load (default: None)")
-@click.option('--adc_stats', is_flag=True, help="Print adc stats (works for streaming data)")
+@click.option('--adc-stats', is_flag=True, help="Print adc stats (works for streaming data)")
 @click.option('--print-wvfm-samples', default=0, help='How many samples in each waveform to print.')
 @click.option('--print-tp-info', is_flag=True, help='Print TP info from DAPHNFrame.')
 
@@ -125,17 +129,19 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
 
             frag     = h5_file.get_frag(r,gid)
             fragType = frag.get_header().fragment_type
+            fragType_string = daqdataformats.fragment_type_to_string(daqdataformats.FragmentType(fragType))
 
             is_selftrigger = (fragType==FragmentType.kDAPHNE.value)
 
             unpacker = unpacker_slftrg if is_selftrigger else unpacker_stream
+
 
             #get and print fragment header
             frag_header = unpacker.get_frh_data(frag)[0]
             print('\t',frag_header)
 
             n_frames = unpacker.get_n_obj(frag)
-            print(f'Found {n_frames} TDE frames in this fragment.')
+            print(f'\tFound {n_frames} {fragType_string} frames in this fragment.')
             if n_frames==0:
                 continue
 
@@ -143,9 +149,10 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
             det_header_data = unpacker.get_det_header_data(frag)
 
             for i_daqh, daqh in enumerate(daq_header_data):
-                print(f'\tDAQ header {i_daqh}: ',daq_header_data[i_daqh])
+                print(f'\tDAQ header {i_daqh}:\n\t\t',daq_header_data[i_daqh])
+                print(det_header_data)
                 if det_header_data is None or len(det_header_data)<(i_daqh+1): continue
-                print(f'\tDAPHNE header info: ',det_header_data[i_daqh])
+                print(f'\tDAPHNE header info {i_daqh}:\n\t\t',det_header_data[i_daqh])
 
             pds_ana_data, pds_wvfm_data = unpacker.get_det_data_all(frag)
 
@@ -160,11 +167,11 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
             if print_wvfm_samples:
                 for pds_wvfm in pds_wvfm_data:
                     if is_selftrigger:
-                        print(f'\t\tPDS channel {pds_wvfm.channel}, timestamp {pds_wvfm.timestamp_dts} waveform ({print_wvfm_samples}/{len(pds_wvfm.timestamps)} samples):')
+                        print(f'\t\tPDS channel {pds_wvfm.channel}, timestamp {pds_wvfm.timestamp_dts} ({dts_to_datetime(pds_wvfm.timestamp_dts)}), waveform ({print_wvfm_samples}/{len(pds_wvfm.timestamps)} samples):')
                     else:
-                        print(f'\t\tPDS channel {pds_ana.channel} waveform ({print_wvfm_samples}/{len(pds_wvfm.timestamps)} samples):')
+                        print(f'\t\tPDS channel {pds_wvfm.channel}, timestamp {pds_wvfm.timestamps[0]} ({dts_to_datetime(pds_wvfm.timestamps[0])}), waveform ({print_wvfm_samples}/{len(pds_wvfm.timestamps)} samples):')
                     for i_sample in range(print_wvfm_samples):
-                        print(f'\t\t\t {i_sample:>5}:  ts={pds_wvfm.timestamps[i_sample]:<25}  val={pds_wvfm.adcs[i_sample]}')
+                        print(f'\t\t\t {i_sample:>5}:  ts={pds_wvfm.timestamps[i_sample]:<25.0f}  val={pds_wvfm.adcs[i_sample]}')
 
             if print_tp_info:
                 if not is_selftrigger:
@@ -195,7 +202,7 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
                             else:
                                 dict_tp_ch_ts[frame.get_channel()].add(frame.get_timestamp()+peaks_data.get_sample_start(i_p))
 
-    print(f"{'Processing fnished': ^80}")
+    print(f"{'Processing finished': ^80}")
 
 if __name__ == '__main__':
     main()

@@ -290,7 +290,9 @@ class TriggerCandidateUnpacker(TriggerDataUnpacker):
 
     def __init__(self,channel_map=None):
         super().__init__()
-        if 'TPC' in channel_map:
+        if not channel_map:
+            self.channel_map = NullChannelMap
+        elif 'TPC' in channel_map:
             self.channel_map = detchannelmaps.make_tpc_map(channel_map)
         elif 'PDS' in channel_map:
             self.channel_map = detchannelmaps.make_pds_map(channel_map)
@@ -370,7 +372,9 @@ class DetectorFragmentUnpacker(FragmentUnpacker):
         super().__init__()
         self.ana_data_prescale = None if not ana_data_prescale else int(ana_data_prescale)
         self.wvfm_data_prescale = None if not wvfm_data_prescale else int(wvfm_data_prescale)
-        if 'TPC' in channel_map:
+        if not channel_map:
+            self.channel_map = NullChannelMap
+        elif 'TPC' in channel_map:
             self.channel_map = detchannelmaps.make_tpc_map(channel_map)
         elif 'PDS' in channel_map:
             self.channel_map = detchannelmaps.make_pds_map(channel_map)
