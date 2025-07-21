@@ -290,7 +290,9 @@ class TriggerCandidateUnpacker(TriggerDataUnpacker):
 
     def __init__(self,channel_map=None):
         super().__init__()
-        if 'TPC' in channel_map:
+        if not channel_map:
+            self.channel_map = NullChannelMap
+        elif 'TPC' in channel_map:
             self.channel_map = detchannelmaps.make_tpc_map(channel_map)
         elif 'PDS' in channel_map:
             self.channel_map = detchannelmaps.make_pds_map(channel_map)
@@ -366,11 +368,19 @@ class DetectorFragmentUnpacker(FragmentUnpacker):
     
     is_detector_unpacker = True
 
-    def __init__(self,ana_data_prescale=1,wvfm_data_prescale=None):
+    def __init__(self,channel_map=None,ana_data_prescale=1,wvfm_data_prescale=None):
         super().__init__()
         self.ana_data_prescale = None if not ana_data_prescale else int(ana_data_prescale)
         self.wvfm_data_prescale = None if not wvfm_data_prescale else int(wvfm_data_prescale)
-    
+        if not channel_map:
+            self.channel_map = NullChannelMap
+        elif 'TPC' in channel_map:
+            self.channel_map = detchannelmaps.make_tpc_map(channel_map)
+        elif 'PDS' in channel_map:
+            self.channel_map = detchannelmaps.make_pds_map(channel_map)
+        else:
+            self.channel_map = NullChannelMap
+
     def get_daq_header_version(self,frag):
         return None
     
@@ -417,10 +427,6 @@ class WIBEthUnpacker(DetectorFragmentUnpacker):
     
     SAMPLING_PERIOD = 32
     N_CHANNELS_PER_FRAME = 64
-    
-    def __init__(self,channel_map=None,ana_data_prescale=1,wvfm_data_prescale=None):
-        super().__init__(ana_data_prescale=ana_data_prescale, wvfm_data_prescale=wvfm_data_prescale)
-        self.channel_map = detchannelmaps.make_tpc_map(channel_map) if channel_map else NullChannelMap
 
     def get_n_obj(self,frag):
         return self.unpacker.get_n_frames(frag)
@@ -597,15 +603,6 @@ class TDEEthUnpacker(DetectorFragmentUnpacker):
     SAMPLING_PERIOD = 31.25
     N_CHANNELS_PER_FRAME = 64
 
-    def __init__(self,channel_map=None,ana_data_prescale=1,wvfm_data_prescale=None):
-        super().__init__(ana_data_prescale=ana_data_prescale, wvfm_data_prescale=wvfm_data_prescale)
-        if 'TPC' in channel_map:
-            self.channel_map = detchannelmaps.make_tpc_map(channel_map)
-        elif 'PDS' in channel_map:
-            self.channel_map = detchannelmaps.make_pds_map(channel_map)
-        else:
-            self.channel_map = NullChannelMap
-
     def get_n_obj(self,frag):
         return self.unpacker.get_n_frames(frag)
 
@@ -774,8 +771,9 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
 
         adcs = self.unpacker.np_array_adc_stream(frag)
         dh = self.frame_obj(frag.get_data()).get_header()
-        channels = [ dh.channel_0, dh.channel_1, dh.channel_2, dh.channel_3 ]
+        det, crate, slot, stream = self.get_det_crate_slot_stream(frag)
         daphne_chans = [ dh.channel_0, dh.channel_1, dh.channel_2, dh.channel_3 ]
+        channels = [ self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, c) for c in daphne_chans ]
 
         if get_ana_data:
             adc_mean = np.mean(adcs,axis=0)
@@ -856,7 +854,9 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
 
         if (len(adcs)) == 0:
             return None, None
-    
+
+        det, crate, slot, stream = self.get_det_crate_slot_stream(frag)
+
         if get_ana_data:
             ax = 1
             adc_mean = np.mean(adcs,axis=ax)
@@ -871,7 +871,7 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
                                             trigger=frh.trigger_number,
                                             sequence=frh.sequence_number,
                                             src_id=frh.element_id.id,
-                                            channel=daphne_headers[iframe].channel,
+                                            channel=self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, daphne_headers[iframe].channel),
                                             daphne_chan=daphne_headers[iframe].channel,
                                             timestamp_dts=timestamp[iframe],
                                             trigger_sample_value=daphne_headers[iframe].trigger_sample_value,
@@ -892,7 +892,7 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
                                              trigger=frh.trigger_number,
                                              sequence=frh.sequence_number,
                                              src_id=frh.element_id.id,
-                                             channel=daphne_headers[iframe].channel,
+                                             channel=self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, daphne_headers[iframe].channel),
                                              daphne_chan=daphne_headers[iframe].channel,
                                              timestamp_dts=timestamp[iframe],
                                              timestamps=np.arange(np.size(adcs[iframe,:]))*self.SAMPLING_PERIOD+timestamp[iframe],
