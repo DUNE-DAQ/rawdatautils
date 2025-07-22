@@ -20,8 +20,9 @@ import numpy as np
 @click.option('--print-adc-stats', is_flag=True, help="Print ADC Pedestals/RMS")
 @click.option('--print-wvfm-samples', default=0, help='How many samples in each waveform to print.')
 @click.option('--det', default='VD_TopTPC', help='Subdetector string (default: VD_TopTPC)')
+@click.option('--channel-map', default=None, help="Channel map to load (default: None)")
 
-def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det):
+def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det, channel_map):
 
     h5_file = HDF5RawDataFile(filename)
 
@@ -43,7 +44,7 @@ def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det):
         records_to_process = records[nskip:nrecords]
     print(f'Will process {len(records_to_process)} of {len(records)} records.')
 
-    unpacker = TDEEthUnpacker(channel_map=None,ana_data_prescale=1,wvfm_data_prescale=1)
+    unpacker = TDEEthUnpacker(channel_map=channel_map,ana_data_prescale=1,wvfm_data_prescale=1)
 
     for r in records_to_process:
 
