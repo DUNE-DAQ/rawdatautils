@@ -81,10 +81,10 @@ def main(filenames, nrecords, nskip, channel_map):
                         sys.exit(f"ERROR: the TP data structure version found in the data ({tp.version}) does not match the version expected by this version of the software ({trgdataformats.TriggerPrimitive.s_trigger_primitive_version}). Please use a version of the software that matches the data.")
 
                     plane=-1
-                    apa="Unknown"
+                    element=-1
                     if ch_map is not None and (tp.detid==3 or tp.detid==10):
                         plane=ch_map.get_plane_from_offline_channel(tp.channel)
-                        apa=ch_map.get_tpc_element_from_offline_channel(tp.channel)
+                        element=ch_map.get_element_id_from_offline_channel(tp.channel)
                         
                     tpd = TriggerPrimitiveData(run=frag.get_run_number(),
                                                trigger=frag.get_trigger_number(),
@@ -95,7 +95,7 @@ def main(filenames, nrecords, nskip, channel_map):
                                                samples_over_threshold=tp.samples_over_threshold,
                                                channel=tp.channel,
                                                plane=plane,
-                                               apa=apa,
+                                               element=element,
                                                adc_integral=tp.adc_integral,
                                                adc_peak=tp.adc_peak,
                                                detid=tp.detid,
