@@ -59,6 +59,18 @@ def desparsify_array_diff_of_diff_locs_and_vals(arr_first, change_locations, cha
     return arr
 
 @dataclass(order=True)
+class TPStreamData():
+    run: int
+    timeslice: int
+    timeslice_header_marker: int
+    version: int
+    n_fragments : int
+
+    @classmethod
+    def index_names(cls):
+        return [ "run","timeslice" ]
+
+@dataclass(order=True)
 class RecordDataBase():
     run: int
     trigger: int
@@ -88,7 +100,6 @@ class FragmentDataBase(RecordDataBase):
 
     def index_values(self):
         return [ self.run, self.trigger, self.sequence, self.src_id ]
-    
 
 @dataclass(order=True)
 class TriggerRecordData(RecordDataBase):
