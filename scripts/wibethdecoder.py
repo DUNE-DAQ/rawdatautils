@@ -82,7 +82,7 @@ def main(filenames, nrecords, nskip, channel_map, print_headers, print_adc_stats
                 frag_window_begin = frag.get_window_begin()
                 frag_window_end = frag.get_window_end()
                 if(frag_type!=daqdataformats.FragmentType.kWIBEth):
-                    print('\tNot WIBEth fragment type {frag_type}. Continue.')
+                    print(f'\tNot WIBEth fragment type {frag_type}. Continue.')
                     continue
 
                 if not quiet:
