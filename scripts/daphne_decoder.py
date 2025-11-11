@@ -96,6 +96,8 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
 
     unpacker_stream = DAPHNEStreamUnpacker(channel_map=channel_map,ana_data_prescale=1,wvfm_data_prescale=1)
     unpacker_slftrg = DAPHNEUnpacker(channel_map=channel_map,ana_data_prescale=1,wvfm_data_prescale=1)
+    unpacker_eth_stream = DAPHNEEthStreamUnpacker(channel_map=channel_map,ana_data_prescale=1,wvfm_data_prescale=1)
+    unpacker_eth_slftrg = DAPHNEEthUnpacker(channel_map=channel_map,ana_data_prescale=1,wvfm_data_prescale=1)
 
 
     #have channel numbers per geoid in here
@@ -131,9 +133,15 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
             fragType = frag.get_header().fragment_type
             fragType_string = daqdataformats.fragment_type_to_string(daqdataformats.FragmentType(fragType))
 
-            is_selftrigger = (fragType==FragmentType.kDAPHNE.value)
+            is_selftrigger = (fragType==FragmentType.kDAPHNE.value or fragType==FragmentType.kDAPHNEEth.value)
+            is_eth = (fragType==FragmentType.kDAPHNEEth.value or fragType==FragmentType.kDAPHNEEthStream.value)
 
-            unpacker = unpacker_slftrg if is_selftrigger else unpacker_stream
+            unpacker = None
+            if is_eth: 
+                unpacker = unpacker_eth_slftrg if is_selftrigger else unpacker_eth_stream
+            else:
+                unpacker = unpacker_slftrg if is_selftrigger else unpacker_stream
+
 
 
             #get and print fragment header
@@ -175,7 +183,7 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
 
             if print_tp_info:
                 if not is_selftrigger:
-                    print(f'--print-tp-info called, but fragment is not kDAPHNE. Skipping...')
+                    print(f'--print-tp-info called, but fragment is not of self-trigger type. Skipping...')
                 else:
                     print(f'--PRINTING TP INFO--')
                     dict_tp_ch_ts = {}

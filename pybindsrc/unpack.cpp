@@ -9,6 +9,8 @@
 #include "fddetdataformats/WIBFrame.hpp"
 #include "fddetdataformats/WIB2Frame.hpp"
 #include "fddetdataformats/DAPHNEFrame.hpp"
+#include "fddetdataformats/DAPHNEEthFrame.hpp"
+#include "fddetdataformats/DAPHNEEthStreamFrame.hpp"
 #include "fddetdataformats/WIBEthFrame.hpp"
 #include "fddetdataformats/TDEEthFrame.hpp"
 #include "daqdataformats/Fragment.hpp"
@@ -78,6 +80,24 @@ namespace daphne {
 
 }
 
+namespace daphneeth {
+  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
+  extern py::array_t<uint8_t> np_array_channels(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
+  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
+  extern py::array_t<uint8_t> np_array_channels_data(void* data, int nframes);
+
+  extern uint32_t get_n_frames_stream(daqdataformats::Fragment const& frag);
+  extern py::array_t<uint16_t> np_array_adc_stream(daqdataformats::Fragment& frag);
+  extern py::array_t<uint8_t> np_array_channels_stream(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_adc_stream_data(void* data, int nframes);
+  extern py::array_t<uint64_t> np_array_timestamp_stream(daqdataformats::Fragment& frag);
+  extern py::array_t<uint64_t> np_array_timestamp_stream_data(void* data, int nframes);
+  extern py::array_t<uint8_t> np_array_channels_stream_data(void* data, int nframes);
+
+}
 
 namespace tde {
   extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);

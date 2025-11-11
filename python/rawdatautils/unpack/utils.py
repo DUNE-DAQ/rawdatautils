@@ -12,6 +12,7 @@ import detchannelmaps
 from rawdatautils.unpack.dataclasses import *
 import rawdatautils.unpack.wibeth
 import rawdatautils.unpack.daphne
+import rawdatautils.unpack.daphneeth
 import h5py
 
 #analysis imports
@@ -806,6 +807,9 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
                                                    fft_mag=ffts[:,i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
         return ana_data, wvfm_data
 
+class DAPHNEEthStreamUnpacker(DAPHNEStreamUnpacker):
+    unpacker = rawdatautils.unpack.daphneeth
+    frame_obj = fddetdataformats.DAPHNEStreamFrame
 
 class DAPHNEUnpacker(DetectorFragmentUnpacker):
 
@@ -900,5 +904,8 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
 
         return ana_data, wvfm_data
 
+class DAPHNEEthUnpacker(DAPHNEUnpacker):
+    unpacker = rawdatautils.unpack.daphneeth
+    frame_obj = fddetdataformats.DAPHNEEthFrame
 
 
