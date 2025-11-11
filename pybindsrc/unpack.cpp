@@ -153,6 +153,23 @@ register_unpack(py::module& m) {
   daphne_module.def("np_array_channels_stream_data", &daphne::np_array_channels_stream_data);
   daphne_module.def("np_array_channels_stream", &daphne::np_array_channels_stream);
 
+  py::module_ daphneeth_module = m.def_submodule("daphneeth");
+  daphneeth_module.def("get_n_frames", &daphneeth::get_n_frames);
+  daphneeth_module.def("np_array_adc", &daphneeth::np_array_adc);
+  daphneeth_module.def("np_array_timestamp", &daphneeth::np_array_timestamp);
+  daphneeth_module.def("np_array_adc_data", &daphneeth::np_array_adc_data);
+  daphneeth_module.def("np_array_timestamp_data", &daphneeth::np_array_timestamp_data);
+  daphneeth_module.def("np_array_channels_data", &daphneeth::np_array_channels_data);
+  daphneeth_module.def("np_array_channels", &daphneeth::np_array_channels);
+
+  daphneeth_module.def("get_n_frames_stream", &daphneeth::get_n_frames_stream);
+  daphneeth_module.def("np_array_adc_stream", &daphneeth::np_array_adc_stream);
+  daphneeth_module.def("np_array_timestamp_stream", &daphneeth::np_array_timestamp_stream);
+  daphneeth_module.def("np_array_adc_stream_data", &daphneeth::np_array_adc_stream_data);
+  daphneeth_module.def("np_array_timestamp_stream_data", &daphneeth::np_array_timestamp_stream_data);
+  daphneeth_module.def("np_array_channels_stream_data", &daphneeth::np_array_channels_stream_data);
+  daphneeth_module.def("np_array_channels_stream", &daphneeth::np_array_channels_stream);
+  
   py::module_ tde_module = m.def_submodule("tde");
   tde_module.def("get_n_frames", &tde::get_n_frames);
   tde_module.def("np_array_adc", &tde::np_array_adc);
