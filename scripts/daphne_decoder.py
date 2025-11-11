@@ -184,6 +184,8 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
             if print_tp_info:
                 if not is_selftrigger:
                     print(f'--print-tp-info called, but fragment is not of self-trigger type. Skipping...')
+                elif is_eth:
+                    print(f'--print-tp-info not currently supported for DAPHNEEthFrame. Skipping...')
                 else:
                     print(f'--PRINTING TP INFO--')
                     dict_tp_ch_ts = {}
