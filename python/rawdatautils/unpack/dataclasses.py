@@ -71,6 +71,9 @@ class RecordDataBase():
     def index_values(self):
         return [ self.run, self.trigger, self.sequence ]
 
+    def __str__(self):
+        return f"{self.__class__.__name__}({', '.join(f'{name}={getattr(self, name)}' for name in self.index_names())})"
+
 @dataclass(order=True)
 class SourceIDData(RecordDataBase):
     src_id: int
@@ -78,6 +81,14 @@ class SourceIDData(RecordDataBase):
     subsystem_str: str
     version: int
     
+    def __str__(self):
+        base_str = super().__str__()
+
+        additional_fields = [f"src_id={self.src_id}",
+                             f"subsystem={self.subsystem} ('{self.subsystem_str}')",
+                             f"version={self.version}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+
 @dataclass(order=True)
 class FragmentDataBase(RecordDataBase):
     src_id: int
@@ -107,6 +118,18 @@ class TriggerRecordData(RecordDataBase):
         self.trigger_time = dts_to_datetime(self.trigger_timestamp_dts)
         self.trigger_type_bits = [ trgdataformats.TriggerCandidateData.Type(i) for i in range(64) if (self.trigger_type & (1<<i))!=0 ]
     
+    def __str__(self):
+        base_str = super().__str__()
+
+        additional_fields = [f"trigger_timestamp={self.trigger_timestamp_dts} ({self.trigger_time})", 
+                             f"trigger_type={self.trigger_type} ({self.trigger_type_bits})",
+                             f"n_fragments={self.n_fragments}",
+                             f"n_requested_components={self.n_requested_components}",
+                             f"max_sequence_number={self.max_sequence_number}",
+                             f"total_size_bytes={self.total_size_bytes}",
+                             f"error_bits={self.error_bits}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+    
 
 @dataclass(order=True)
 class FragmentHeaderData(FragmentDataBase):
@@ -127,6 +150,21 @@ class FragmentHeaderData(FragmentDataBase):
         self.trigger_time = dts_to_datetime(self.trigger_timestamp_dts)
         self.window_begin_time = dts_to_datetime(self.window_begin_dts)
         self.window_end_time = dts_to_datetime(self.window_end_dts)
+
+    def __str__(self):
+        base_str = super().__str__()
+
+        fr_type = daqdataformats.FragmentType(self.fragment_type)
+        subdet = detdataformats.DetID.subdetector_to_string(detdataformats.DetID.Subdetector(self.det_id))
+        additional_fields = [f"trigger_timestamp={self.trigger_timestamp_dts}",
+                             f"window [begin,end)=[{self.window_begin_dts},{self.window_end_dts})",
+                             f"det_id={self.det_id} ('{subdet}')",
+                             f"fragment_type={self.fragment_type} ('{daqdataformats.fragment_type_to_string(fr_type)}')",
+                             f"total_size_bytes={self.total_size_bytes}",
+                             f"data_size_bytes={self.data_size_bytes}",
+                             f"error_bits={self.error_bits}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+
 
 @dataclass(order=True)
 class TriggerHeaderData(FragmentDataBase):
@@ -149,6 +187,22 @@ class TriggerPrimitiveData(FragmentDataBase):
     flag: int
     id_ta: int
 
+    def __str__(self):
+        base_str = super().__str__()
+        subdet = detdataformats.DetID.subdetector_to_string(detdataformats.DetID.Subdetector(self.detid))
+
+        additional_fields = [f"channel={self.channel}",
+                             f"(plane,element)=({self.plane},{self.element})",
+                             f"time_start={self.time_start}",
+                             f"samples_to_peak={self.samples_to_peak}",
+                             f"samples_over_threshold={self.samples_over_threshold}",
+                             f"adc_integral={self.adc_integral}",
+                             f"adc_peak={self.adc_peak}",
+                             f"detid={self.detid} ('{subdet}')",
+                             f"flag={self.flag}",
+                             f"id_ta={self.id_ta}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+
 @dataclass(order=True)
 class TriggerActivityData(FragmentDataBase):
 
@@ -170,6 +224,26 @@ class TriggerActivityData(FragmentDataBase):
     id: int
     id_tc: int
 
+    def __str__(self):
+        base_str = super().__str__()
+        subdet = detdataformats.DetID.subdetector_to_string(detdataformats.DetID.Subdetector(self.detid))
+        tatype = trgdataformats.TriggerActivityData.Type(self.ta_type)
+        taalg = trgdataformats.TriggerActivityData.Algorithm(self.algorithm)
+
+        additional_fields = [f"id={self.id}",
+                             f"channel (start,peak,end)=({self.channel_start},{self.channel_peak},{self.channel_end})",
+                             f"(plane,element)=({self.plane},{self.element})",
+                             f"time_activity={self.time_activity}",
+                             f"time (start,peak,end)=({self.time_start},{self.time_peak},{self.time_end})",
+                             f"adc_integral={self.adc_integral}",
+                             f"adc_peak={self.adc_peak}",
+                             f"detid={self.detid} ('{subdet}')",
+                             f"ta_type={self.ta_type} ('{tatype})",
+                             f"algorithm={self.algorithm} ('{taalg})",
+                             f"n_tps={self.n_tps}",
+                             f"id_tc={self.id_tc}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+
 @dataclass(order=True)
 class TriggerCandidateData(FragmentDataBase):
 
@@ -181,6 +255,21 @@ class TriggerCandidateData(FragmentDataBase):
     algorithm: int
     n_tas: int
     id: int
+
+    def __str__(self):
+        base_str = super().__str__()
+        subdet = detdataformats.DetID.subdetector_to_string(detdataformats.DetID.Subdetector(self.detid))
+        tctype = trgdataformats.TriggerCandidateData.Type(self.tc_type)
+        tcalg = trgdataformats.TriggerCandidateData.Algorithm(self.algorithm)
+
+        additional_fields = [f"id={self.id}",
+                             f"time_candidate={self.time_candidate}",
+                             f"time (start,end)=({self.time_start},{self.time_end})",
+                             f"detid={self.detid} ('{subdet}')",
+                             f"tc_type={self.ta_type} ('{tctype})",
+                             f"algorithm={self.algorithm} ('{tcalg})",
+                             f"n_tas={self.n_tas}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
 
 @dataclass(order=True)
 class DAQHeaderData(FragmentDataBase):
@@ -197,6 +286,17 @@ class DAQHeaderData(FragmentDataBase):
 
     def __post_init__(self):
         self.timestamp_first_time = dts_to_datetime(self.timestamp_first_dts)
+
+    def __str__(self):
+        base_str = super().__str__()
+        subdet = detdataformats.DetID.subdetector_to_string(detdataformats.DetID.Subdetector(self.det_id))
+        additional_fields = [f"n_obj={self.n_obj}",
+                             f"first_timestamp={self.timestamp_first_dts}",
+                             f"det_id={self.det_id} ('{subdet}')",
+                             f"(crate_id,slot_id,stream_id)=({self.crate_id},{self.slot_id},{self.stream_id})",
+                             f"daq_header_version={self.daq_header_version}",
+                             f"det_data_version={self.det_data_version}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
 
 @dataclass(order=True)
 class WIBEthHeaderData(FragmentDataBase):
@@ -250,6 +350,25 @@ class WIBEthHeaderData(FragmentDataBase):
     n_channels: int
     sampling_period: int
 
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"n_frames={self.n_frames}",
+                             f"n_channels={self.n_channels}",
+                             f"sampling_period={self.sampling_period}",
+                             f"femb_id={self.femb_id}",
+                             f"coldata_id={self.colddata_id}",
+                             f"version={self.version}",
+                             f"first_timestamp={self.timestamp_dts_first}"]
+        additional_field_names = ["timestamp_dts_diff",
+                                  "colddata_timestamp_0_diff","colddata_timestamp_1_diff",
+                                  "cd","crc_err","link_valid","lol","wib_sync","femb_sync",
+                                  "pulser","calibration","ready","context"]
+        for name in additional_field_names:
+            vals_name = f'{name}_vals'
+            idx_name = f'{name}_idx'
+            additional_fields.append(f"{name}={getattr(self,vals_name)} (idx={getattr(self,idx_name)})")                         
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+
 @dataclass(order=True)
 class WIBEthChannelDataBase(FragmentDataBase):
     
@@ -274,12 +393,28 @@ class WIBEthAnalysisData(WIBEthChannelDataBase):
     adc_min: int
     adc_median: float
 
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"adc_mean={self.adc_mean}",
+                             f"adc_rms={self.adc_rms}",
+                             f"adc_max={self.adc_max}",
+                             f"adc_min={self.adc_min}",
+                             f"adc_median={self.adc_median}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+
 @dataclass(order=True)
 class WIBEthWaveformData(WIBEthChannelDataBase):
 
     timestamps: np.ndarray
     adcs: np.ndarray
     fft_mag: np.ndarray
+
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"timestamps={self.timestamps}",
+                             f"adcs={self.adcs}",
+                             f"fft_mag={self.fft_mag}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
 
 @dataclass(order=True)
 class TDEEthHeaderData(FragmentDataBase):
@@ -309,6 +444,23 @@ class TDEEthHeaderData(FragmentDataBase):
     n_channels: int
     sampling_period: int
 
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"n_frames={self.n_frames}",
+                             f"n_channels={self.n_channels}",
+                             f"sampling_period={self.sampling_period}",
+                             f"channel_id={self.channel_id}",
+                             f"tde_header={self.tde_header}",
+                             f"version={self.version}",
+                             f"first_timestamp={self.timestamp_first_dts}",
+                             f"tai_time_first={self.tai_time_first}"]
+        additional_field_names = ["timestamp_dts_diff","tai_time_diff","errors"]
+        for name in additional_field_names:
+            vals_name = f'{name}_vals'
+            idx_name = f'{name}_idx'
+            additional_fields.append(f"{name}={getattr(self,vals_name)} (idx={getattr(self,idx_name)})")                         
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+
 @dataclass(order=True)
 class TDEEthChannelDataBase(FragmentDataBase):
 
@@ -333,12 +485,28 @@ class TDEEthAnalysisData(TDEEthChannelDataBase):
     adc_min: int
     adc_median: float
 
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"adc_mean={self.adc_mean}",
+                             f"adc_rms={self.adc_rms}",
+                             f"adc_max={self.adc_max}",
+                             f"adc_min={self.adc_min}",
+                             f"adc_median={self.adc_median}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+
 @dataclass(order=True)
 class TDEEthWaveformData(TDEEthChannelDataBase):
 
     timestamps: np.ndarray[int, np.float128]
     adcs: np.ndarray
     fft_mag: np.ndarray
+
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"timestamps={self.timestamps}",
+                             f"adcs={self.adcs}",
+                             f"fft_mag={self.fft_mag}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
 
 @dataclass(order=True)
 class DAPHNEStreamHeaderData(FragmentDataBase):
@@ -347,6 +515,13 @@ class DAPHNEStreamHeaderData(FragmentDataBase):
     sampling_period: int
     ts_diffs_vals: np.ndarray
     ts_diffs_counts: np.ndarray
+
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"n_channels={self.n_channels}",
+                             f"sampling_period={self.sampling_period}",
+                             f"ts_diffs_vals={self.ts_diffs_vals} (counts={self.ts_diffs_counts})"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
 
 @dataclass(order=True)
 class DAPHNEChannelDataBase(FragmentDataBase):
@@ -370,7 +545,16 @@ class DAPHNEStreamAnalysisData(DAPHNEChannelDataBase):
     adc_max: int
     adc_min: int
     adc_median: float
-    
+
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"adc_mean={self.adc_mean}",
+                             f"adc_rms={self.adc_rms}",
+                             f"adc_max={self.adc_max}",
+                             f"adc_min={self.adc_min}",
+                             f"adc_median={self.adc_median}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+
 @dataclass(order=True)
 class DAPHNEStreamWaveformData(DAPHNEChannelDataBase):
 
@@ -378,7 +562,13 @@ class DAPHNEStreamWaveformData(DAPHNEChannelDataBase):
     adcs: np.ndarray
     fft_mag: np.ndarray
 
-
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"timestamps={self.timestamps}",
+                             f"adcs={self.adcs}",
+                             f"fft_mag={self.fft_mag}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+    
 @dataclass(order=True)
 class DAPHNEAnalysisData(DAPHNEChannelDataBase):
 
@@ -393,10 +583,30 @@ class DAPHNEAnalysisData(DAPHNEChannelDataBase):
     adc_median: float
     timestamp_max_dts: int
     timestamp_min_dts: int
-    
+
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"timestamp_dts={self.timestamp_dts}",
+                             f"trigger_sample_value={self.trigger_sample_value}",
+                             f"baseline={self.baseline}",
+                             f"threshold={self.threshold}",
+                             f"adc_mean={self.adc_mean}",
+                             f"adc_rms={self.adc_rms}",
+                             f"adc_max={self.adc_max} (timestamp={self.timestamp_max_dts})",
+                             f"adc_min={self.adc_min} (timestamp={self.timestamp_min_dts})",
+                             f"adc_median={self.adc_median}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
+
 @dataclass(order=True)
 class DAPHNEWaveformData(DAPHNEChannelDataBase):
 
     timestamp_dts: int
     timestamps: np.ndarray
     adcs: np.ndarray
+
+    def __str__(self):
+        base_str = super().__str__()
+        additional_fields = [f"timestamp_dts={self.timestamp_dts}",
+                             f"timestamps={self.timestamps}",
+                             f"adcs={self.adcs}"]
+        return f"{base_str}: [{', '.join(additional_fields)}]"
