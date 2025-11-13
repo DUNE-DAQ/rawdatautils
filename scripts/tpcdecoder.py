@@ -47,6 +47,7 @@ def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det, ch
         openv_channel_map="PD2VDTPCChannelMap"
     else:
         print(f'Unknown operational_environment ({op_env}). Will use specified channel-map {channel_map}')
+        openv_channel_map=channel_map
  
     if openv_channel_map!=channel_map and channel_map is not None:
         print(f'Operational environment {op_env} suggests channel map {openv_channel_map}, not {channel_map}.')
