@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-import typing
 from datetime import datetime
 import pytz
 import numpy as np
@@ -353,7 +352,6 @@ class DAPHNEChannelDataBase(FragmentDataBase):
     
     channel: int
     daphne_chan: int
-    offline_channel: typing.Optional[int] = None
     
     @classmethod
     def index_names(cls):
