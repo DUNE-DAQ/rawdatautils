@@ -774,7 +774,7 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
         dh = self.frame_obj(frag.get_data()).get_header()
         det, crate, slot, stream = self.get_det_crate_slot_stream(frag)
         daphne_chans = [ dh.channel_0, dh.channel_1, dh.channel_2, dh.channel_3 ]
-        channels = [ self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, c) for c in daphne_chans ]
+        offline_channels = [ self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, hw_chan) for hw_chan in daphne_chans ]
 
         if get_ana_data:
             adc_mean = np.mean(adcs,axis=0)
@@ -786,7 +786,7 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
                                                   trigger=frh.trigger_number,
                                                   sequence=frh.sequence_number,
                                                   src_id=frh.element_id.id,
-                                                  channel=channels[i_ch],
+                                                  channel=daphne_chans[i_ch],
                                                   daphne_chan=daphne_chans[i_ch],
                                                   adc_mean=adc_mean[i_ch],
                                                   adc_rms=adc_rms[i_ch],
@@ -800,8 +800,8 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
                                                    trigger=frh.trigger_number,
                                                    sequence=frh.sequence_number,
                                                    src_id=frh.element_id.id,
-                                                   channel=channels[i_ch],
-                                                   daphne_chan=channels[i_ch],
+                                                   channel=daphne_chans[i_ch],
+                                                   daphne_chan=daphne_chans[i_ch],
                                                    adcs=adcs[:,i_ch],
                                                    timestamps=timestamps,
                                                    fft_mag=ffts[:,i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
