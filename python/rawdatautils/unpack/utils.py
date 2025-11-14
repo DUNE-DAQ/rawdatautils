@@ -809,11 +809,59 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
 
 class DAPHNEEthStreamUnpacker(DAPHNEStreamUnpacker):
     unpacker = rawdatautils.unpack.daphneeth
-    frame_obj = fddetdataformats.DAPHNEStreamFrame
+    frame_obj = fddetdataformats.DAPHNEEthStreamFrame
 
     def get_det_crate_slot_stream(self,frag):
         dh = self.frame_obj(frag.get_data()).get_daqheader()
         return dh.det_id, dh.crate_id, dh.slot_id, dh.stream_id
+
+    def get_det_data_all(self,frag):
+        frh = frag.get_header()
+        trigger_number = frh.trigger_number
+
+        get_ana_data = (self.ana_data_prescale is not None and (trigger_number % self.ana_data_prescale)==0)
+        get_wvfm_data = (self.wvfm_data_prescale is not None and (trigger_number % self.wvfm_data_prescale)==0)
+
+        if not (get_ana_data or get_wvfm_data):
+            return None,None
+
+        ana_data = None
+        wvfm_data = None
+
+        adcs = self.unpacker.np_array_adc_stream(frag)
+        frame = self.frame_obj(frag.get_data())
+        daphne_chans = [ frame.get_channel(i) for i in range(self.N_CHANNELS_PER_FRAME) ]
+
+        if get_ana_data:
+            adc_mean = np.mean(adcs,axis=0)
+            adc_rms = np.std(adcs,axis=0)
+            adc_max = np.max(adcs,axis=0)
+            adc_min = np.min(adcs,axis=0)
+            adc_median = np.median(adcs,axis=0)
+            ana_data = [ DAPHNEStreamAnalysisData(run=frh.run_number,
+                                                  trigger=frh.trigger_number,
+                                                  sequence=frh.sequence_number,
+                                                  src_id=frh.element_id.id,
+                                                  channel=daphne_chans[i_ch],
+                                                  daphne_chan=daphne_chans[i_ch],
+                                                  adc_mean=adc_mean[i_ch],
+                                                  adc_rms=adc_rms[i_ch],
+                                                  adc_max=adc_max[i_ch],
+                                                  adc_min=adc_min[i_ch],
+                                                  adc_median=adc_median[i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
+        if get_wvfm_data:
+            timestamps = self.unpacker.np_array_timestamp_stream(frag)
+            ffts = np.abs(np.fft.rfft(adcs,axis=0))
+            wvfm_data = [ DAPHNEStreamWaveformData(run=frh.run_number,
+                                                   trigger=frh.trigger_number,
+                                                   sequence=frh.sequence_number,
+                                                   src_id=frh.element_id.id,
+                                                   channel=daphne_chans[i_ch],
+                                                   daphne_chan=daphne_chans[i_ch],
+                                                   adcs=adcs[:,i_ch],
+                                                   timestamps=timestamps,
+                                                   fft_mag=ffts[:,i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
+        return ana_data, wvfm_data
 
 class DAPHNEUnpacker(DetectorFragmentUnpacker):
 
@@ -915,4 +963,3 @@ class DAPHNEEthUnpacker(DAPHNEUnpacker):
     def get_det_crate_slot_stream(self,frag):
         dh = self.frame_obj(frag.get_data()).get_daqheader()
         return dh.det_id, dh.crate_id, dh.slot_id, dh.stream_id
-
