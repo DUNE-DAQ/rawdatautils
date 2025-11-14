@@ -353,6 +353,7 @@ class DAPHNEChannelDataBase(FragmentDataBase):
     
     channel: int
     daphne_chan: int
+    offline_channel: typing.Optional[int] = None
     
     @classmethod
     def index_names(cls):
