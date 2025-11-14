@@ -813,7 +813,12 @@ class DAPHNEEthStreamUnpacker(DAPHNEStreamUnpacker):
 
     def get_det_crate_slot_stream(self,frag):
         dh = self.frame_obj(frag.get_data()).get_daqheader()
-        return dh.det_id, dh.crate_id, dh.slot_id, dh.stream_id
+        stream_id = getattr(dh, "stream_id", None)
+        if stream_id is None:
+            stream_id = getattr(dh, "link_id", None)
+        if stream_id is None:
+            raise AttributeError("DAQHeader object does not expose stream_id or link_id")
+        return dh.det_id, dh.crate_id, dh.slot_id, stream_id
 
 class DAPHNEUnpacker(DetectorFragmentUnpacker):
 
@@ -915,4 +920,3 @@ class DAPHNEEthUnpacker(DAPHNEUnpacker):
     def get_det_crate_slot_stream(self,frag):
         dh = self.frame_obj(frag.get_data()).get_daqheader()
         return dh.det_id, dh.crate_id, dh.slot_id, dh.stream_id
-
