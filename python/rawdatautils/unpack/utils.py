@@ -12,6 +12,7 @@ import detchannelmaps
 from rawdatautils.unpack.dataclasses import *
 import rawdatautils.unpack.wibeth
 import rawdatautils.unpack.daphne
+import rawdatautils.unpack.daphneeth
 import h5py
 
 #analysis imports
@@ -745,7 +746,7 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
 
     def get_det_header_data(self,frag):
         frh = frag.get_header()
-        dh = self.frame_obj(frag.get_data()).get_header()
+        #dh = self.frame_obj(frag.get_data()).get_header()
         ts_diffs_vals, ts_diffs_counts = np.unique(np.diff( np.array(self.unpacker.np_array_timestamp_stream(frag), dtype=np.int64)), return_counts=True)
         return [ DAPHNEStreamHeaderData(run=frh.run_number,
                                         trigger=frh.trigger_number,
@@ -806,6 +807,13 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
                                                    fft_mag=ffts[:,i_ch]) for i_ch in range(self.N_CHANNELS_PER_FRAME) ]
         return ana_data, wvfm_data
 
+class DAPHNEEthStreamUnpacker(DAPHNEStreamUnpacker):
+    unpacker = rawdatautils.unpack.daphneeth
+    frame_obj = fddetdataformats.DAPHNEStreamFrame
+
+    def get_det_crate_slot_stream(self,frag):
+        dh = self.frame_obj(frag.get_data()).get_daqheader()
+        return dh.det_id, dh.crate_id, dh.slot_id, dh.stream_id
 
 class DAPHNEUnpacker(DetectorFragmentUnpacker):
 
@@ -900,5 +908,11 @@ class DAPHNEUnpacker(DetectorFragmentUnpacker):
 
         return ana_data, wvfm_data
 
+class DAPHNEEthUnpacker(DAPHNEUnpacker):
+    unpacker = rawdatautils.unpack.daphneeth
+    frame_obj = fddetdataformats.DAPHNEEthFrame
 
+    def get_det_crate_slot_stream(self,frag):
+        dh = self.frame_obj(frag.get_data()).get_daqheader()
+        return dh.det_id, dh.crate_id, dh.slot_id, dh.stream_id
 
