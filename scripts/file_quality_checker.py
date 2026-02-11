@@ -22,6 +22,8 @@ import numpy as np
 @click.argument('filenames', nargs=-1)
 def main(filenames):
     """
+JCF, Feb-11-2026: this line is an edit which I'm using to test a workflow; *it should not be merged into develop*
+
 This script provides a high-level summary of the records in an output HDF5 file and the fragments which they contain.
 
 It simply takes a filename, or list of filenames, as argument(s) and summarizes each one sequentially.
