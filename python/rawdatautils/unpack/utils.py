@@ -74,7 +74,7 @@ class TriggerRecordHeaderUnpacker(Unpacker):
                                          trigger_timestamp_dts=trh.get_trigger_timestamp(),
                                          n_fragments=n_fragments,
                                          n_requested_components=trh.get_num_requested_components(),
-                                         error_bits=trh.get_header().error_bits,
+                                         status_bits=trh.get_header().status_bits,
                                          trigger_type=trh.get_trigger_type(),
                                          max_sequence_number=trh.get_max_sequence_number(),
                                          total_size_bytes=trh.get_total_size_bytes()) ]
@@ -110,7 +110,7 @@ class FragmentUnpacker(Unpacker):
                                     window_begin_dts=frh.window_begin,
                                     window_end_dts=frh.window_end,
                                     det_id=frh.detector_id,
-                                    error_bits=frh.error_bits,
+                                    status_bits=frh.status_bits,
                                     fragment_type=frh.fragment_type,
                                     total_size_bytes=frh.size,
                                     data_size_bytes=frag.get_data_size()) ]

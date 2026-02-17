@@ -105,10 +105,10 @@ https://dune-daq-sw.readthedocs.io/en/latest/packages/rawdatautils/
                     if frag.get_size() < tr_stats[ frag.get_fragment_type()]["min_size" ]:
                         tr_stats[ frag.get_fragment_type()]["min_size" ] = frag.get_size()
                 else:
-                    tr_stats[ frag.get_fragment_type() ] = { "count": 1, "nonzero_error_bits_count": 0, "max_size": frag.get_size(), "min_size": frag.get_size() }
+                    tr_stats[ frag.get_fragment_type() ] = { "count": 1, "nonzero_status_bits_count": 0, "max_size": frag.get_size(), "min_size": frag.get_size() }
 
-                if frag.get_header().error_bits != 0:
-                        tr_stats[ frag.get_fragment_type() ]["nonzero_error_bits_count"] += 1
+                if frag.get_header().status_bits != 0:
+                        tr_stats[ frag.get_fragment_type() ]["nonzero_status_bits_count"] += 1
                     
 
             for frag_type in tr_stats:
@@ -117,10 +117,10 @@ https://dune-daq-sw.readthedocs.io/en/latest/packages/rawdatautils/
                         tr_global_stats[frag_type]["max_count"] = tr_stats[frag_type]["count"]
                     if tr_stats[frag_type]["count"] < tr_global_stats[frag_type]["min_count"]:
                         tr_global_stats[frag_type]["min_count"] = tr_stats[frag_type]["count"]
-                    if tr_stats[frag_type]["nonzero_error_bits_count"] > tr_global_stats[frag_type]["nonzero_error_bits_max_count"]:
-                        tr_global_stats[frag_type]["nonzero_error_bits_max_count"] = tr_stats[frag_type]["nonzero_error_bits_count"]
-                    if tr_stats[frag_type]["nonzero_error_bits_count"] < tr_global_stats[frag_type]["nonzero_error_bits_min_count"]:
-                        tr_global_stats[frag_type]["nonzero_error_bits_min_count"] = tr_stats[frag_type]["nonzero_error_bits_count"]
+                    if tr_stats[frag_type]["nonzero_status_bits_count"] > tr_global_stats[frag_type]["nonzero_status_bits_max_count"]:
+                        tr_global_stats[frag_type]["nonzero_status_bits_max_count"] = tr_stats[frag_type]["nonzero_status_bits_count"]
+                    if tr_stats[frag_type]["nonzero_status_bits_count"] < tr_global_stats[frag_type]["nonzero_status_bits_min_count"]:
+                        tr_global_stats[frag_type]["nonzero_status_bits_min_count"] = tr_stats[frag_type]["nonzero_status_bits_count"]
 
                     if tr_stats[frag_type]["max_size"] > tr_global_stats[frag_type]["max_size"]:
                         tr_global_stats[frag_type]["max_size"] = tr_stats[frag_type]["max_size"]
@@ -132,8 +132,8 @@ https://dune-daq-sw.readthedocs.io/en/latest/packages/rawdatautils/
                                                    "min_count": tr_stats[frag_type]["count"],
                                                    "max_size": tr_stats[frag_type]["max_size"],
                                                    "min_size": tr_stats[frag_type]["min_size"],
-                                                   "nonzero_error_bits_min_count": tr_stats[frag_type]["nonzero_error_bits_count"],
-                                                   "nonzero_error_bits_max_count": tr_stats[frag_type]["nonzero_error_bits_count"]
+                                                   "nonzero_status_bits_min_count": tr_stats[frag_type]["nonzero_status_bits_count"],
+                                                   "nonzero_status_bits_max_count": tr_stats[frag_type]["nonzero_status_bits_count"]
                                                    }
 
         print(f"Processed {len(records)} of {len(records)} records...")
@@ -188,8 +188,8 @@ https://dune-daq-sw.readthedocs.io/en/latest/packages/rawdatautils/
                                tr_global_stats[frag_type]["max_count"],
                                tr_global_stats[frag_type]["min_size"],
                                tr_global_stats[frag_type]["max_size"],
-                               tr_global_stats[frag_type]["nonzero_error_bits_min_count"],
-                               tr_global_stats[frag_type]["nonzero_error_bits_max_count"])
+                               tr_global_stats[frag_type]["nonzero_status_bits_min_count"],
+                               tr_global_stats[frag_type]["nonzero_status_bits_max_count"])
                                )
 
             print(divider)
