@@ -107,7 +107,7 @@ class TriggerRecordData(RecordDataBase):
     trigger_timestamp_dts: int
     n_fragments: int
     n_requested_components: int
-    error_bits: int
+    status_bits: int
     trigger_type: int
     max_sequence_number: int
     total_size_bytes: int
@@ -127,7 +127,7 @@ class TriggerRecordData(RecordDataBase):
                              f"n_requested_components={self.n_requested_components}",
                              f"max_sequence_number={self.max_sequence_number}",
                              f"total_size_bytes={self.total_size_bytes}",
-                             f"error_bits={self.error_bits}"]
+                             f"status_bits={self.status_bits}"]
         return f"{base_str}: [{', '.join(additional_fields)}]"
     
 
@@ -138,7 +138,7 @@ class FragmentHeaderData(FragmentDataBase):
     window_begin_dts: int
     window_end_dts: int
     det_id: int
-    error_bits: int
+    status_bits: int
     fragment_type: int
     total_size_bytes: int
     data_size_bytes: int
@@ -162,7 +162,7 @@ class FragmentHeaderData(FragmentDataBase):
                              f"fragment_type={self.fragment_type} ('{daqdataformats.fragment_type_to_string(fr_type)}')",
                              f"total_size_bytes={self.total_size_bytes}",
                              f"data_size_bytes={self.data_size_bytes}",
-                             f"error_bits={self.error_bits}"]
+                             f"status_bits={self.status_bits}"]
         return f"{base_str}: [{', '.join(additional_fields)}]"
 
 
