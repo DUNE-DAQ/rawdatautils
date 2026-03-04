@@ -771,9 +771,10 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
         wvfm_data = None
 
         adcs = self.unpacker.np_array_adc_stream(frag)
-        dh = self.frame_obj(frag.get_data()).get_header()
+        frame = self.frame_obj(frag.get_data())
+        dh = frame.get_header()
         det, crate, slot, stream = self.get_det_crate_slot_stream(frag)
-        daphne_chans = [ dh.channel_0, dh.channel_1, dh.channel_2, dh.channel_3 ]
+        daphne_chans = [ frame.get_channel0(), frame.get_channel1(), frame.get_channel2(), frame.get_channel3() ]
         channels = [ self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, c) for c in daphne_chans ]
 
         if get_ana_data:
@@ -809,7 +810,7 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
 
 class DAPHNEEthStreamUnpacker(DAPHNEStreamUnpacker):
     unpacker = rawdatautils.unpack.daphneeth
-    frame_obj = fddetdataformats.DAPHNEStreamFrame
+    frame_obj = fddetdataformats.DAPHNEEthStreamFrame
 
     def get_det_crate_slot_stream(self,frag):
         dh = self.frame_obj(frag.get_data()).get_daqheader()
