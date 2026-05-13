@@ -8,7 +8,6 @@
 
 #include "rawdatautils/WIBtoWIB2.hpp"
 #include "rawdatautils/WIBtoWIBEth.hpp"
-#include "rawdatautils/WIBtoTDE.hpp"
 
 
 #include <pybind11/numpy.h>
@@ -30,8 +29,6 @@ register_file_conversion(py::module& m)
   m.def("wib_binary_to_wib2_binary", &wib_binary_to_wib2_binary);
   m.def("wib_hdf5_to_wibeth_binary", &wib_hdf5_to_wibeth_binary);
   m.def("wib_binary_to_wibeth_binary", &wib_binary_to_wibeth_binary);
-  m.def("wib_hdf5_to_tde_binary", &wib_hdf5_to_tde_binary);
-  m.def("wib_binary_to_tde_binary", &wib_binary_to_tde_binary);
 }
 
 } // namespace python
