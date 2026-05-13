@@ -6,7 +6,6 @@
  * received with this code.
  */
 
-#include "fddetdataformats/WIB2Frame.hpp"
 #include "fddetdataformats/DAPHNEFrame.hpp"
 #include "fddetdataformats/DAPHNEEthFrame.hpp"
 #include "fddetdataformats/DAPHNEEthStreamFrame.hpp"
@@ -33,14 +32,6 @@ void print_hex_fragment(daqdataformats::Fragment const& frag) {
     fmt::print("{:06d} 0x{:016x}\n", i, data[i]);
   }
 
-}
-
-namespace wib2 {
-  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
-  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
 }
 
 namespace wibeth {
@@ -106,13 +97,6 @@ void
 register_unpack(py::module& m) {
 
   m.def("print_hex_fragment", &print_hex_fragment);
-
-  py::module_ wib2_module = m.def_submodule("wib2");
-  wib2_module.def("get_n_frames", &wib2::get_n_frames);
-  wib2_module.def("np_array_adc", &wib2::np_array_adc);
-  wib2_module.def("np_array_timestamp", &wib2::np_array_timestamp);
-  wib2_module.def("np_array_adc_data", &wib2::np_array_adc_data);
-  wib2_module.def("np_array_timestamp_data", &wib2::np_array_timestamp_data);
 
   py::module_ wibeth_module = m.def_submodule("wibeth");
   wibeth_module.def("get_n_frames", &wibeth::get_n_frames);
