@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+import sys
+
+print("""
+Jun-18-2026: This script has been deprecated, as it works with now-obsolete WIB2 frames. 
+It's been left in the codebase to leave open the possibility that it work with newer types of data.
+""")
+sys.exit(1)
+
+####################################################################################################
+
 from hdf5libs import HDF5RawDataFile
 
 import detchannelmaps
