@@ -913,7 +913,85 @@ class DAPHNEEthUnpacker(DAPHNEUnpacker):
     unpacker = rawdatautils.unpack.daphneeth
     frame_obj = fddetdataformats.DAPHNEEthFrame
 
-    def get_det_crate_slot_stream(self,frag):
+    def get_det_crate_slot_stream(self, frag):
         dh = self.frame_obj(frag.get_data()).get_daqheader()
         return dh.det_id, dh.crate_id, dh.slot_id, dh.stream_id
+
+    def get_det_data_all(self, frag):
+        frh = frag.get_header()
+        trigger_number = frh.trigger_number
+        wvfm_data = None
+        ana_data = None
+
+        get_ana_data = (self.ana_data_prescale is not None and (trigger_number % self.ana_data_prescale)==0)
+        get_wvfm_data = (self.wvfm_data_prescale is not None and (trigger_number % self.wvfm_data_prescale)==0)
+
+        if not (get_ana_data or get_wvfm_data):
+            return None, None
+
+        n_frames = self.get_n_obj(frag)
+        adcs = self.unpacker.np_array_adc(frag)
+
+        if len(adcs) == 0:
+            return None, None
+
+        frames = [ self.frame_obj(frag.get_data(iframe*self.frame_obj.sizeof())) for iframe in range(n_frames) ]
+        timestamp = self.unpacker.np_array_timestamp(frag)
+        det, crate, slot, stream = self.get_det_crate_slot_stream(frag)
+        n_max_peaks = self.frame_obj.s_max_peaks
+
+        if get_ana_data:
+            ax = 1
+            adc_mean   = np.mean(adcs, axis=ax)
+            adc_rms    = np.std(adcs, axis=ax)
+            adc_max    = np.max(adcs, axis=ax)
+            adc_min    = np.min(adcs, axis=ax)
+            adc_median = np.median(adcs, axis=ax)
+            ts_max = np.argmax(adcs, axis=ax)*self.SAMPLING_PERIOD + timestamp
+            ts_min = np.argmin(adcs, axis=ax)*self.SAMPLING_PERIOD + timestamp
+
+            ana_data = []
+            for iframe, frame in enumerate(frames):
+                hdr   = frame.get_header()
+                peaks = frame.get_peaks_data()
+                ana_data.append(DAPHNEEthAnalysisData(
+                    run=frh.run_number,
+                    trigger=frh.trigger_number,
+                    sequence=frh.sequence_number,
+                    src_id=frh.element_id.id,
+                    channel=self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, hdr.channel),
+                    daphne_chan=hdr.channel,
+                    timestamp_dts=timestamp[iframe],
+                    trigger_sample_value=hdr.trigger_sample_value,
+                    threshold=hdr.threshold,
+                    baseline=hdr.baseline,
+                    adc_mean=adc_mean[iframe],
+                    adc_rms=adc_rms[iframe],
+                    adc_max=adc_max[iframe],
+                    adc_min=adc_min[iframe],
+                    adc_median=adc_median[iframe],
+                    timestamp_max_dts=ts_max[iframe],
+                    timestamp_min_dts=ts_min[iframe],
+                    peak_found=np.array([peaks.is_found(i_p) for i_p in range(n_max_peaks)]),
+                    peak_adc_integral=np.array([peaks.get_adc_integral(i_p) for i_p in range(n_max_peaks)], dtype=np.uint32),
+                    peak_adc_max=np.array([peaks.get_adc_max(i_p) for i_p in range(n_max_peaks)], dtype=np.uint16),
+                    peak_sample_max=np.array([peaks.get_sample_max(i_p) for i_p in range(n_max_peaks)], dtype=np.uint16),
+                    peak_samples_over_baseline=np.array([peaks.get_samples_over_baseline(i_p) for i_p in range(n_max_peaks)], dtype=np.uint16),
+                    peak_sample_start=np.array([peaks.get_sample_start(i_p) for i_p in range(n_max_peaks)], dtype=np.uint16),
+                    peak_num_subpeaks=np.array([peaks.get_num_subpeaks(i_p) for i_p in range(n_max_peaks)], dtype=np.uint8),
+                ))
+
+        if get_wvfm_data:
+            wvfm_data = [ DAPHNEWaveformData(
+                run=frh.run_number,
+                trigger=frh.trigger_number,
+                sequence=frh.sequence_number,
+                src_id=frh.element_id.id,
+                channel=self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, frames[iframe].get_header().channel),
+                daphne_chan=frames[iframe].get_header().channel,
+                timestamp_dts=timestamp[iframe],
+                timestamps=np.arange(np.size(adcs[iframe,:]))*self.SAMPLING_PERIOD+timestamp[iframe],
+                adcs=adcs[iframe,:]) for iframe in range(n_frames) ]
+
+        return ana_data, wvfm_data
 

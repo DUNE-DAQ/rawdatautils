@@ -610,3 +610,30 @@ class DAPHNEWaveformData(DAPHNEChannelDataBase):
                              f"timestamps={self.timestamps}",
                              f"adcs={self.adcs}"]
         return f"{base_str}: [{', '.join(additional_fields)}]"
+
+@dataclass(order=True)
+class DAPHNEEthAnalysisData(DAPHNEAnalysisData):
+
+    peak_found:                 np.ndarray  # shape (s_max_peaks,), bool
+    peak_adc_integral:          np.ndarray  # shape (s_max_peaks,), uint32
+    peak_adc_max:               np.ndarray  # shape (s_max_peaks,), uint16
+    peak_sample_max:            np.ndarray  # shape (s_max_peaks,), uint16
+    peak_samples_over_baseline: np.ndarray  # shape (s_max_peaks,), uint16
+    peak_sample_start:          np.ndarray  # shape (s_max_peaks,), uint16
+    peak_num_subpeaks:          np.ndarray  # shape (s_max_peaks,), uint8
+
+    def __str__(self):
+        base_str = super().__str__()
+        peak_strs = []
+        for i_p in range(len(self.peak_found)):
+            if self.peak_found[i_p]:
+                peak_strs.append(
+                    f"peak[{i_p}](integral={self.peak_adc_integral[i_p]}, "
+                    f"adc_max={self.peak_adc_max[i_p]}, "
+                    f"sample_start={self.peak_sample_start[i_p]}, "
+                    f"sample_max={self.peak_sample_max[i_p]}, "
+                    f"t_over_baseline={self.peak_samples_over_baseline[i_p]}, "
+                    f"n_subpeaks={self.peak_num_subpeaks[i_p]})"
+                )
+        peaks_str = f"peaks=[{', '.join(peak_strs)}]" if peak_strs else "peaks=[]"
+        return f"{base_str}, {peaks_str}"
