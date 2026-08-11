@@ -191,15 +191,20 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
                     for i_f in range(n_frames):
                         frame = frame_class(frag.get_data(i_f*frame_class.sizeof()))
                         print(f'\tAnalyzing Frame {i_f}: TS={frame.get_timestamp()} DAPHNE_CH={frame.get_channel()}')
-                        peaks_data = frame.get_peaks_data()
+                        if is_eth:
+                            peaks_data = frame.get_peaks_data()
+                            n_max_peaks = frame_class.s_max_peaks
+                        else:
+                            peaks_data = frame.peaks_data()
+                            n_max_peaks = 5
 
                         n_tps = 0
-                        for i_p in range(5):
+                        for i_p in range(n_max_peaks):
                             if peaks_data.is_found(i_p): n_tps+=1
                         print(f'\t\tFound {n_tps} TPs:')
                         if frame.get_channel() not in dict_tp_ch_ts.keys():
                             dict_tp_ch_ts[frame.get_channel()] = set()
-                        for i_p in range(n_tps):
+                        for i_p in range(n_max_peaks):
                             if not peaks_data.is_found(i_p): continue
                             print(f'\t\t\tTP Peak {i_p} at ts={peaks_data.get_sample_start(i_p)}, ',
                                   f'adc_integral={peaks_data.get_adc_integral(i_p)}, '
@@ -215,7 +220,6 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
 
 if __name__ == '__main__':
     main()
-
 
 
 
