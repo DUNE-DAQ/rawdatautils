@@ -79,6 +79,21 @@ namespace daphneeth {
   extern py::array_t<uint64_t> np_array_timestamp_stream_data(void* data, int nframes);
   extern py::array_t<uint8_t> np_array_channels_stream_data(void* data, int nframes);
 
+  extern py::array_t<uint8_t>  np_array_peak_found_data(void* data, int nframes);
+  extern py::array_t<uint8_t>  np_array_peak_found(daqdataformats::Fragment& frag);
+  extern py::array_t<uint32_t> np_array_peak_adc_integral_data(void* data, int nframes);
+  extern py::array_t<uint32_t> np_array_peak_adc_integral(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_peak_adc_max_data(void* data, int nframes);
+  extern py::array_t<uint16_t> np_array_peak_adc_max(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_peak_sample_max_data(void* data, int nframes);
+  extern py::array_t<uint16_t> np_array_peak_sample_max(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_peak_samples_over_baseline_data(void* data, int nframes);
+  extern py::array_t<uint16_t> np_array_peak_samples_over_baseline(daqdataformats::Fragment& frag);
+  extern py::array_t<uint16_t> np_array_peak_sample_start_data(void* data, int nframes);
+  extern py::array_t<uint16_t> np_array_peak_sample_start(daqdataformats::Fragment& frag);
+  extern py::array_t<uint8_t>  np_array_peak_num_subpeaks_data(void* data, int nframes);
+  extern py::array_t<uint8_t>  np_array_peak_num_subpeaks(daqdataformats::Fragment& frag);
+
 }
 
 namespace tde {
@@ -138,7 +153,22 @@ register_unpack(py::module& m) {
   daphneeth_module.def("np_array_timestamp_stream_data", &daphneeth::np_array_timestamp_stream_data);
   daphneeth_module.def("np_array_channels_stream_data", &daphneeth::np_array_channels_stream_data);
   daphneeth_module.def("np_array_channels_stream", &daphneeth::np_array_channels_stream);
-  
+
+  daphneeth_module.def("np_array_peak_found_data", &daphneeth::np_array_peak_found_data);
+  daphneeth_module.def("np_array_peak_found", &daphneeth::np_array_peak_found);
+  daphneeth_module.def("np_array_peak_adc_integral_data", &daphneeth::np_array_peak_adc_integral_data);
+  daphneeth_module.def("np_array_peak_adc_integral", &daphneeth::np_array_peak_adc_integral);
+  daphneeth_module.def("np_array_peak_adc_max_data", &daphneeth::np_array_peak_adc_max_data);
+  daphneeth_module.def("np_array_peak_adc_max", &daphneeth::np_array_peak_adc_max);
+  daphneeth_module.def("np_array_peak_sample_max_data", &daphneeth::np_array_peak_sample_max_data);
+  daphneeth_module.def("np_array_peak_sample_max", &daphneeth::np_array_peak_sample_max);
+  daphneeth_module.def("np_array_peak_samples_over_baseline_data", &daphneeth::np_array_peak_samples_over_baseline_data);
+  daphneeth_module.def("np_array_peak_samples_over_baseline", &daphneeth::np_array_peak_samples_over_baseline);
+  daphneeth_module.def("np_array_peak_sample_start_data", &daphneeth::np_array_peak_sample_start_data);
+  daphneeth_module.def("np_array_peak_sample_start", &daphneeth::np_array_peak_sample_start);
+  daphneeth_module.def("np_array_peak_num_subpeaks_data", &daphneeth::np_array_peak_num_subpeaks_data);
+  daphneeth_module.def("np_array_peak_num_subpeaks", &daphneeth::np_array_peak_num_subpeaks);
+
   py::module_ tde_module = m.def_submodule("tde");
   tde_module.def("get_n_frames", &tde::get_n_frames);
   tde_module.def("np_array_adc", &tde::np_array_adc);

@@ -184,13 +184,12 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
             if print_tp_info:
                 if not is_selftrigger:
                     print(f'--print-tp-info called, but fragment is not of self-trigger type. Skipping...')
-                elif is_eth:
-                    print(f'--print-tp-info not currently supported for DAPHNEEthFrame. Skipping...')
                 else:
+                    frame_class = fddetdataformats.DAPHNEEthFrame if is_eth else fddetdataformats.DAPHNEFrame
                     print(f'--PRINTING TP INFO--')
                     dict_tp_ch_ts = {}
                     for i_f in range(n_frames):
-                        frame = fddetdataformats.DAPHNEFrame(frag.get_data(i_f*fddetdataformats.DAPHNEFrame.sizeof()))
+                        frame = frame_class(frag.get_data(i_f*frame_class.sizeof()))
                         print(f'\tAnalyzing Frame {i_f}: TS={frame.get_timestamp()} DAPHNE_CH={frame.get_channel()}')
                         peaks_data = frame.get_peaks_data()
 

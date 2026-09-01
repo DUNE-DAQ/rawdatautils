@@ -210,4 +210,127 @@ py::array_t<uint64_t> np_array_timestamp_stream(daqdataformats::Fragment& frag){
 }
 
 
+/**
+ * @brief Unpacks peak Found flags for DAPHNEEthFrames into a numpy array
+ * with dimensions (nframes, s_max_peaks)
+ */
+py::array_t<uint8_t> np_array_peak_found_data(void* data, int nframes) {
+  const auto n_peaks = fddetdataformats::DAPHNEEthFrame::s_max_peaks;
+  py::array_t<uint8_t> ret(nframes * n_peaks);
+  auto ptr = static_cast<uint8_t*>(ret.request().ptr);
+  for (size_t i = 0; i < (size_t)nframes; ++i) {
+    auto fr = reinterpret_cast<fddetdataformats::DAPHNEEthFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEEthFrame));
+    const auto& peaks = fr->get_peaks_data();
+    for (int i_p = 0; i_p < n_peaks; ++i_p)
+      ptr[i * n_peaks + i_p] = peaks.is_found(i_p) ? 1 : 0;
+  }
+  ret.resize({nframes, n_peaks});
+  return ret;
+}
+py::array_t<uint8_t> np_array_peak_found(daqdataformats::Fragment& frag) {
+  return np_array_peak_found_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::DAPHNEEthFrame));
+}
+
+py::array_t<uint32_t> np_array_peak_adc_integral_data(void* data, int nframes) {
+  const auto n_peaks = fddetdataformats::DAPHNEEthFrame::s_max_peaks;
+  py::array_t<uint32_t> ret(nframes * n_peaks);
+  auto ptr = static_cast<uint32_t*>(ret.request().ptr);
+  for (size_t i = 0; i < (size_t)nframes; ++i) {
+    auto fr = reinterpret_cast<fddetdataformats::DAPHNEEthFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEEthFrame));
+    const auto& peaks = fr->get_peaks_data();
+    for (int i_p = 0; i_p < n_peaks; ++i_p)
+      ptr[i * n_peaks + i_p] = peaks.get_adc_integral(i_p);
+  }
+  ret.resize({nframes, n_peaks});
+  return ret;
+}
+py::array_t<uint32_t> np_array_peak_adc_integral(daqdataformats::Fragment& frag) {
+  return np_array_peak_adc_integral_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::DAPHNEEthFrame));
+}
+
+py::array_t<uint16_t> np_array_peak_adc_max_data(void* data, int nframes) {
+  const auto n_peaks = fddetdataformats::DAPHNEEthFrame::s_max_peaks;
+  py::array_t<uint16_t> ret(nframes * n_peaks);
+  auto ptr = static_cast<uint16_t*>(ret.request().ptr);
+  for (size_t i = 0; i < (size_t)nframes; ++i) {
+    auto fr = reinterpret_cast<fddetdataformats::DAPHNEEthFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEEthFrame));
+    const auto& peaks = fr->get_peaks_data();
+    for (int i_p = 0; i_p < n_peaks; ++i_p)
+      ptr[i * n_peaks + i_p] = peaks.get_adc_max(i_p);
+  }
+  ret.resize({nframes, n_peaks});
+  return ret;
+}
+py::array_t<uint16_t> np_array_peak_adc_max(daqdataformats::Fragment& frag) {
+  return np_array_peak_adc_max_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::DAPHNEEthFrame));
+}
+
+py::array_t<uint16_t> np_array_peak_sample_max_data(void* data, int nframes) {
+  const auto n_peaks = fddetdataformats::DAPHNEEthFrame::s_max_peaks;
+  py::array_t<uint16_t> ret(nframes * n_peaks);
+  auto ptr = static_cast<uint16_t*>(ret.request().ptr);
+  for (size_t i = 0; i < (size_t)nframes; ++i) {
+    auto fr = reinterpret_cast<fddetdataformats::DAPHNEEthFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEEthFrame));
+    const auto& peaks = fr->get_peaks_data();
+    for (int i_p = 0; i_p < n_peaks; ++i_p)
+      ptr[i * n_peaks + i_p] = peaks.get_sample_max(i_p);
+  }
+  ret.resize({nframes, n_peaks});
+  return ret;
+}
+py::array_t<uint16_t> np_array_peak_sample_max(daqdataformats::Fragment& frag) {
+  return np_array_peak_sample_max_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::DAPHNEEthFrame));
+}
+
+py::array_t<uint16_t> np_array_peak_samples_over_baseline_data(void* data, int nframes) {
+  const auto n_peaks = fddetdataformats::DAPHNEEthFrame::s_max_peaks;
+  py::array_t<uint16_t> ret(nframes * n_peaks);
+  auto ptr = static_cast<uint16_t*>(ret.request().ptr);
+  for (size_t i = 0; i < (size_t)nframes; ++i) {
+    auto fr = reinterpret_cast<fddetdataformats::DAPHNEEthFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEEthFrame));
+    const auto& peaks = fr->get_peaks_data();
+    for (int i_p = 0; i_p < n_peaks; ++i_p)
+      ptr[i * n_peaks + i_p] = peaks.get_samples_over_baseline(i_p);
+  }
+  ret.resize({nframes, n_peaks});
+  return ret;
+}
+py::array_t<uint16_t> np_array_peak_samples_over_baseline(daqdataformats::Fragment& frag) {
+  return np_array_peak_samples_over_baseline_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::DAPHNEEthFrame));
+}
+
+py::array_t<uint16_t> np_array_peak_sample_start_data(void* data, int nframes) {
+  const auto n_peaks = fddetdataformats::DAPHNEEthFrame::s_max_peaks;
+  py::array_t<uint16_t> ret(nframes * n_peaks);
+  auto ptr = static_cast<uint16_t*>(ret.request().ptr);
+  for (size_t i = 0; i < (size_t)nframes; ++i) {
+    auto fr = reinterpret_cast<fddetdataformats::DAPHNEEthFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEEthFrame));
+    const auto& peaks = fr->get_peaks_data();
+    for (int i_p = 0; i_p < n_peaks; ++i_p)
+      ptr[i * n_peaks + i_p] = peaks.get_sample_start(i_p);
+  }
+  ret.resize({nframes, n_peaks});
+  return ret;
+}
+py::array_t<uint16_t> np_array_peak_sample_start(daqdataformats::Fragment& frag) {
+  return np_array_peak_sample_start_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::DAPHNEEthFrame));
+}
+
+py::array_t<uint8_t> np_array_peak_num_subpeaks_data(void* data, int nframes) {
+  const auto n_peaks = fddetdataformats::DAPHNEEthFrame::s_max_peaks;
+  py::array_t<uint8_t> ret(nframes * n_peaks);
+  auto ptr = static_cast<uint8_t*>(ret.request().ptr);
+  for (size_t i = 0; i < (size_t)nframes; ++i) {
+    auto fr = reinterpret_cast<fddetdataformats::DAPHNEEthFrame*>(static_cast<char*>(data) + i * sizeof(fddetdataformats::DAPHNEEthFrame));
+    const auto& peaks = fr->get_peaks_data();
+    for (int i_p = 0; i_p < n_peaks; ++i_p)
+      ptr[i * n_peaks + i_p] = peaks.get_num_subpeaks(i_p);
+  }
+  ret.resize({nframes, n_peaks});
+  return ret;
+}
+py::array_t<uint8_t> np_array_peak_num_subpeaks(daqdataformats::Fragment& frag) {
+  return np_array_peak_num_subpeaks_data(frag.get_data(), (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / sizeof(fddetdataformats::DAPHNEEthFrame));
+}
+
 } // namespace dunedaq::rawdatautils::daphne // NOLINT
