@@ -6,12 +6,12 @@
  * received with this code.
  */
 
-#include "fddetdataformats/DAPHNEFrame.hpp"
+#include "daqdataformats/Fragment.hpp"
 #include "fddetdataformats/DAPHNEEthFrame.hpp"
 #include "fddetdataformats/DAPHNEEthStreamFrame.hpp"
-#include "fddetdataformats/WIBEthFrame.hpp"
+#include "fddetdataformats/DAPHNEFrame.hpp"
 #include "fddetdataformats/TDEEthFrame.hpp"
-#include "daqdataformats/Fragment.hpp"
+#include "fddetdataformats/WIBEthFrame.hpp"
 
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -24,69 +24,107 @@ namespace py = pybind11;
 namespace dunedaq {
 namespace rawdatautils {
 
-void print_hex_fragment(daqdataformats::Fragment const& frag) {
+void
+print_hex_fragment(daqdataformats::Fragment const& frag)
+{
   uint64_t* data = static_cast<uint64_t*>(frag.get_data());
-  size_t data_size = (frag.get_size() - sizeof(daqdataformats::FragmentHeader))/8;
+  size_t data_size = (frag.get_size() - sizeof(daqdataformats::FragmentHeader)) / 8;
 
-  for ( size_t i(0); i<data_size; ++i) {
+  for (size_t i(0); i < data_size; ++i) {
     fmt::print("{:06d} 0x{:016x}\n", i, data[i]);
   }
-
 }
 
 namespace wibeth {
-  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc_data(void* data, uint32_t n_frames);
-  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, uint32_t n_frames);
+extern uint32_t
+get_n_frames(daqdataformats::Fragment const& frag);
+extern py::array_t<uint16_t>
+np_array_adc(daqdataformats::Fragment const& frag);
+extern py::array_t<uint16_t>
+np_array_adc_data(void* data, uint32_t n_frames);
+extern py::array_t<uint64_t>
+np_array_timestamp(daqdataformats::Fragment const& frag);
+extern py::array_t<uint64_t>
+np_array_timestamp_data(void* data, uint32_t n_frames);
 }
 
-
 namespace daphne {
-  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
-  extern py::array_t<uint8_t> np_array_channels(daqdataformats::Fragment& frag);
-  extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
-  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
-  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
-  extern py::array_t<uint8_t> np_array_channels_data(void* data, int nframes);
+extern uint32_t
+get_n_frames(daqdataformats::Fragment const& frag);
+extern py::array_t<uint16_t>
+np_array_adc(daqdataformats::Fragment& frag);
+extern py::array_t<uint8_t>
+np_array_channels(daqdataformats::Fragment& frag);
+extern py::array_t<uint16_t>
+np_array_adc_data(void* data, int nframes);
+extern py::array_t<uint64_t>
+np_array_timestamp(daqdataformats::Fragment& frag);
+extern py::array_t<uint64_t>
+np_array_timestamp_data(void* data, int nframes);
+extern py::array_t<uint8_t>
+np_array_channels_data(void* data, int nframes);
 
-  extern uint32_t get_n_frames_stream(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc_stream(daqdataformats::Fragment& frag);
-  extern py::array_t<uint8_t> np_array_channels_stream(daqdataformats::Fragment& frag);
-  extern py::array_t<uint16_t> np_array_adc_stream_data(void* data, int nframes);
-  extern py::array_t<uint64_t> np_array_timestamp_stream(daqdataformats::Fragment& frag);
-  extern py::array_t<uint64_t> np_array_timestamp_stream_data(void* data, int nframes);
-  extern py::array_t<uint8_t> np_array_channels_stream_data(void* data, int nframes);
+extern uint32_t
+get_n_frames_stream(daqdataformats::Fragment const& frag);
+extern py::array_t<uint16_t>
+np_array_adc_stream(daqdataformats::Fragment& frag);
+extern py::array_t<uint8_t>
+np_array_channels_stream(daqdataformats::Fragment& frag);
+extern py::array_t<uint16_t>
+np_array_adc_stream_data(void* data, int nframes);
+extern py::array_t<uint64_t>
+np_array_timestamp_stream(daqdataformats::Fragment& frag);
+extern py::array_t<uint64_t>
+np_array_timestamp_stream_data(void* data, int nframes);
+extern py::array_t<uint8_t>
+np_array_channels_stream_data(void* data, int nframes);
 
 }
 
 namespace daphneeth {
-  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment& frag);
-  extern py::array_t<uint8_t> np_array_channels(daqdataformats::Fragment& frag);
-  extern py::array_t<uint16_t> np_array_adc_data(void* data, int nframes);
-  extern py::array_t<uint64_t> np_array_timestamp(daqdataformats::Fragment& frag);
-  extern py::array_t<uint64_t> np_array_timestamp_data(void* data, int nframes);
-  extern py::array_t<uint8_t> np_array_channels_data(void* data, int nframes);
+extern uint32_t
+get_n_frames(daqdataformats::Fragment const& frag);
+extern py::array_t<uint16_t>
+np_array_adc(daqdataformats::Fragment& frag);
+extern py::array_t<uint8_t>
+np_array_channels(daqdataformats::Fragment& frag);
+extern py::array_t<uint16_t>
+np_array_adc_data(void* data, int nframes);
+extern py::array_t<uint64_t>
+np_array_timestamp(daqdataformats::Fragment& frag);
+extern py::array_t<uint64_t>
+np_array_timestamp_data(void* data, int nframes);
+extern py::array_t<uint8_t>
+np_array_channels_data(void* data, int nframes);
 
-  extern uint32_t get_n_frames_stream(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc_stream(daqdataformats::Fragment& frag);
-  extern py::array_t<uint8_t> np_array_channels_stream(daqdataformats::Fragment& frag);
-  extern py::array_t<uint16_t> np_array_adc_stream_data(void* data, int nframes);
-  extern py::array_t<uint64_t> np_array_timestamp_stream(daqdataformats::Fragment& frag);
-  extern py::array_t<uint64_t> np_array_timestamp_stream_data(void* data, int nframes);
-  extern py::array_t<uint8_t> np_array_channels_stream_data(void* data, int nframes);
+extern uint32_t
+get_n_frames_stream(daqdataformats::Fragment const& frag);
+extern py::array_t<uint16_t>
+np_array_adc_stream(daqdataformats::Fragment& frag);
+extern py::array_t<uint8_t>
+np_array_channels_stream(daqdataformats::Fragment& frag);
+extern py::array_t<uint16_t>
+np_array_adc_stream_data(void* data, int nframes);
+extern py::array_t<uint64_t>
+np_array_timestamp_stream(daqdataformats::Fragment& frag);
+extern py::array_t<uint64_t>
+np_array_timestamp_stream_data(void* data, int nframes);
+extern py::array_t<uint8_t>
+np_array_channels_stream_data(void* data, int nframes);
 
 }
 
 namespace tde {
-  extern uint32_t get_n_frames(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc(daqdataformats::Fragment const& frag);
-  extern py::array_t<uint16_t> np_array_adc_data(void* data, uint32_t n_frames);
-  extern py::array_t<long double> np_array_timestamp(daqdataformats::Fragment const& frag);
-  extern py::array_t<long double> np_array_timestamp_data(void* data, uint32_t n_frames);
+extern uint32_t
+get_n_frames(daqdataformats::Fragment const& frag);
+extern py::array_t<uint16_t>
+np_array_adc(daqdataformats::Fragment const& frag);
+extern py::array_t<uint16_t>
+np_array_adc_data(void* data, uint32_t n_frames);
+extern py::array_t<long double>
+np_array_timestamp(daqdataformats::Fragment const& frag);
+extern py::array_t<long double>
+np_array_timestamp_data(void* data, uint32_t n_frames);
 
 }
 
@@ -94,7 +132,8 @@ namespace unpack {
 namespace python {
 
 void
-register_unpack(py::module& m) {
+register_unpack(py::module& m)
+{
 
   m.def("print_hex_fragment", &print_hex_fragment);
 
@@ -138,14 +177,13 @@ register_unpack(py::module& m) {
   daphneeth_module.def("np_array_timestamp_stream_data", &daphneeth::np_array_timestamp_stream_data);
   daphneeth_module.def("np_array_channels_stream_data", &daphneeth::np_array_channels_stream_data);
   daphneeth_module.def("np_array_channels_stream", &daphneeth::np_array_channels_stream);
-  
+
   py::module_ tde_module = m.def_submodule("tde");
   tde_module.def("get_n_frames", &tde::get_n_frames);
   tde_module.def("np_array_adc", &tde::np_array_adc);
   tde_module.def("np_array_timestamp", &tde::np_array_timestamp);
   tde_module.def("np_array_adc_data", &tde::np_array_adc_data);
   tde_module.def("np_array_timestamp_data", &tde::np_array_timestamp_data);
-
 }
 
 } // namespace python
