@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
-from hdf5libs import HDF5RawDataFile
+import rawdatafilelibs
 
 import click
+import sys
 import time
 
 @click.command()
@@ -11,46 +12,27 @@ import time
 
 def main(filename):
 
-    h5_file = HDF5RawDataFile(filename)
-    file_layout_version = h5_file.get_version()
-    #print(f'file_layout_verion {file_layout_version}')
+    h5_file = rawdatafilelibs.open(filename)
+    metadata = h5_file.metadata
 
-    attr_name = "creation_timestamp"
-    if file_layout_version >= 6:
-        attr_value = h5_file.get_int_attribute(attr_name)
-        print(f'{attr_name} {attr_value}')
-    else:
-        attr_value = h5_file.get_attribute(attr_name)
-        print(f'{attr_name} {attr_value}')
-    
-    attr_name = "closing_timestamp"
-    if file_layout_version >= 6:
-        attr_value = h5_file.get_int_attribute(attr_name)
-        print(f'{attr_name} {attr_value}')
-    else:
-        attr_value = h5_file.get_attribute(attr_name)
+    # The timestamps are in ms, whether the file stores them as integers (layout version >= 6) or as strings.
+    # 0 means the file doesn't have the value; fail then, as the earlier version did, so the file isn't used.
+    for attr_name, attr_value in (("creation_timestamp", metadata.creation_timestamp_ms),
+                                  ("closing_timestamp", metadata.closing_timestamp_ms)):
+        if attr_value == 0:
+            sys.exit(f'{filename} has no {attr_name}')
         print(f'{attr_name} {attr_value}')
 
-    attr_name = "offline_data_stream"
-    try:
-        attr_value = h5_file.get_attribute(attr_name)
-    except RuntimeError:
-        attr_value = "cosmics"
-    print(f'{attr_name} {attr_value}')
+    # Defaults for files written without these values
+    attr_value = metadata.offline_data_stream if metadata.offline_data_stream != "" else "cosmics"
+    print(f'offline_data_stream {attr_value}')
 
-    attr_name = "run_was_for_test_purposes"
-    try:
-        attr_value = h5_file.get_attribute(attr_name)
-    except RuntimeError:
-        attr_value = "false"
-    print(f'{attr_name} {attr_value}')
+    attr_value = "true" if metadata.run_is_for_test_purposes else "false"
+    print(f'run_was_for_test_purposes {attr_value}')
 
-    attr_name = "file_recovery_timestamp"
-    try:
-        attr_value = h5_file.get_int_attribute(attr_name)
-        print(f'{attr_name} {attr_value}')
-    except RuntimeError:
-        pass
+    # Only files recovered after being left unfinished have this value (0 = never recovered)
+    if metadata.recovery_timestamp_ms != 0:
+        print(f'file_recovery_timestamp {metadata.recovery_timestamp_ms}')
 
     records = h5_file.get_all_record_ids()
 

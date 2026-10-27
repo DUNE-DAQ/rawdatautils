@@ -10,7 +10,7 @@ sys.exit(1)
 
 ####################################################################################################
 
-from hdf5libs import HDF5RawDataFile
+import rawdatafilelibs
 
 import detchannelmaps
 import daqdataformats
@@ -47,31 +47,22 @@ https://dune-daq-sw.readthedocs.io/en/latest/packages/rawdatautils/
             sys.exit(f"ERROR: file \"{filename}\" doesn't appear to exist")
 
         try:
-            h5file = HDF5RawDataFile(filename)
+            h5file = rawdatafilelibs.open(filename)
         except:
             print(traceback.format_exc())
             sys.exit(f"ERROR: file \"{filename}\" couldn't be opened; is it an HDF5 file?")
 
         print(f"Processing {filename}...")
 
-        is_trigger_records = True
-        
+        is_trigger_records = h5file.is_trigger_record_type()
+        if not is_trigger_records and not h5file.is_timeslice_type():
+            sys.exit(f"The file holds neither trigger records nor timeslices. Exiting...\n")
+
         try:
-            records = h5file.get_all_trigger_record_ids()
-        except RuntimeError:
-            is_trigger_records = False
+            records = h5file.get_all_record_ids()
         except:
             print(traceback.format_exc())
-            sys.exit("ERROR: Something went wrong when calling h5file.get_all_trigger_record_ids(); file may contain junk data or be corrupted. Exiting...\n")
-
-        if not is_trigger_records:
-            try:
-                records = h5file.get_all_timeslice_ids()
-            except RuntimeError:
-                sys.exit(f"Neither get_all_trigger_record_ids() nor get_all_timeslice_ids() returned records. Exiting...\n")
-            except:
-                print(traceback.format_exc())
-                sys.exit("ERROR: Something went wrong when calling h5file.get_all_timeslice_ids(); file may contain junk data or be corrupted. Exiting...\n")
+            sys.exit("ERROR: Something went wrong when calling h5file.get_all_record_ids(); file may contain junk data or be corrupted. Exiting...\n")
         
         if is_trigger_records:
             print(f'Will process {len(records)} trigger records.')
@@ -103,11 +94,10 @@ https://dune-daq-sw.readthedocs.io/en/latest/packages/rawdatautils/
                 assumed_record_id_step = r[0] - first_record_id
                 assumed_sequence_id_step = r[1] - first_sequence_id
                     
-            dset_paths = h5file.get_fragment_dataset_paths(r)
             tr_stats = {}
 
-            for dset_path in dset_paths:
-                frag = h5file.get_frag(dset_path)
+            for source_id in h5file[r].source_ids():
+                frag = h5file.get_frag(r, source_id)
                 if frag.get_fragment_type() in tr_stats:
                     tr_stats[ frag.get_fragment_type()]["count" ] += 1
                     if frag.get_size() > tr_stats[ frag.get_fragment_type() ]["max_size" ]:

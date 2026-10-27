@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-from hdf5libs import HDF5RawDataFile
-import h5py
+import rawdatafilelibs
 
 import daqdataformats
 import trgdataformats
@@ -25,7 +24,7 @@ def main(filenames, nrecords, nskip, channel_map):
     for filename in filenames:
 
         
-        h5_file = HDF5RawDataFile(filename)
+        h5_file = rawdatafilelibs.open(filename)
         records = h5_file.get_all_record_ids()
         
         if nskip > len(records):
@@ -53,15 +52,13 @@ def main(filenames, nrecords, nskip, channel_map):
             elif 'PDS' in channel_map:
                 ch_map = detchannelmaps.make_pds_map(channel_map)
 
-        with h5py.File(h5_file.get_file_name(), 'r') as f:
-            record_type = f.attrs["record_type"]
-            print(f'Record type is {record_type}')
+        print(f'Record type is {h5_file.get_record_type()}')
         
         for r in records_to_process:
 
             print(f'Processing (Record Number,Sequence Number)=({r[0],r[1]})')
 
-            src_ids = h5_file.get_source_ids(r)
+            src_ids = h5_file[r].source_ids()
 
             for sid in src_ids:
                 if(sid.subsystem!=daqdataformats.SourceID.Subsystem.kTrigger): continue

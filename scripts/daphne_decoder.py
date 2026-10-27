@@ -9,7 +9,7 @@ Description: Script checks PDS data and prints some of the ADC stats.
 """
 
 
-from hdf5libs import HDF5RawDataFile
+import rawdatafilelibs
 
 import daqdataformats
 import detdataformats
@@ -50,18 +50,18 @@ def print_links(pds_geo_ids):
     geo_data = [[] for i in range(4)]
     for gid in pds_geo_ids:
         #geo_info = detchannelmaps.HardwareMapService.parse_geo_id(gid)
-        det_link = 0xffff & (gid >> 48);
-        det_slot = 0xffff & (gid >> 32);
-        det_crate = 0xffff & (gid >> 16);
-        det_id = 0xffff & gid;
-        subdet = detdataformats.DetID.Subdetector(det_id)
+        geo_id = detdataformats.GeoID.decode(gid)
+        det_link = geo_id.stream_id
+        det_slot = geo_id.slot_id
+        det_crate = geo_id.crate_id
+        subdet = geo_id.subdetector()
         det_name = detdataformats.DetID.subdetector_to_string(subdet)
         geo_data[det_slot].append(det_link)
 
     
     for i in range(len(geo_data)):
         if len(geo_data[i])>0:
-            print(f"\t{geo_info.det_crate:3}{split}{i:3}{split}{geo_data[i]}")
+            print(f"\t{det_crate:3}{split}{i:3}{split}{geo_data[i]}")
     return
 
 
@@ -77,7 +77,7 @@ def print_links(pds_geo_ids):
 
 def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samples, print_tp_info):
 
-    h5_file   = HDF5RawDataFile(filename)
+    h5_file   = rawdatafilelibs.open(filename)
     records   = h5_file.get_all_record_ids()
 
     if nskip > len(records):
@@ -117,11 +117,11 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
         
         for gid in pds_geo_ids:
 
-            det_stream = 0xffff & (gid >> 48);
-            det_slot = 0xffff & (gid >> 32);
-            det_crate = 0xffff & (gid >> 16);
-            det_id = 0xffff & gid;
-            subdet = detdataformats.DetID.Subdetector(det_id)
+            geo_id = detdataformats.GeoID.decode(gid)
+            det_stream = geo_id.stream_id
+            det_slot = geo_id.slot_id
+            det_crate = geo_id.crate_id
+            subdet = geo_id.subdetector()
             det_name = detdataformats.DetID.subdetector_to_string(subdet)
             print(f'\tProcessing gid {gid}: ',
                   f'subdetector {det_name}, '
@@ -129,7 +129,7 @@ def main(filename, det, nrecords, nskip, channel_map, adc_stats, print_wvfm_samp
                   f'slot {det_slot}, '
                   f'stream {det_stream}')
 
-            frag     = h5_file.get_frag(r,gid)
+            frag     = h5_file.get_frag(r,h5_file.geo_id_map.get_source_ids(geo_id)[0])
             fragType = frag.get_header().fragment_type
             fragType_string = daqdataformats.fragment_type_to_string(daqdataformats.FragmentType(fragType))
 

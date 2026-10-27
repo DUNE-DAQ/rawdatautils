@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from hdf5libs import HDF5RawDataFile
+import rawdatafilelibs
 
 import daqdataformats
 import detdataformats
@@ -23,7 +23,7 @@ import numpy as np
 
 def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det):
 
-    h5_file = HDF5RawDataFile(filename)
+    h5_file = rawdatafilelibs.open(filename)
 
     records = h5_file.get_all_record_ids()
 
@@ -52,11 +52,11 @@ def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det):
 
         for gid in geo_ids:
 
-            det_stream = 0xffff & (gid >> 48);
-            det_slot = 0xffff & (gid >> 32);
-            det_crate = 0xffff & (gid >> 16);
-            det_id = 0xffff & gid;
-            subdet = detdataformats.DetID.Subdetector(det_id)
+            geo_id = detdataformats.GeoID.decode(gid)
+            det_stream = geo_id.stream_id
+            det_slot = geo_id.slot_id
+            det_crate = geo_id.crate_id
+            subdet = geo_id.subdetector()
             det_name = detdataformats.DetID.subdetector_to_string(subdet)
             print(f'\tProcessing subdetector {det_name}, '
                   f'crate {det_crate}, '
@@ -64,7 +64,7 @@ def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det):
                   f'stream {det_stream}')
 
             #get the fragment
-            frag = h5_file.get_frag(r,gid)
+            frag = h5_file.get_frag(r,h5_file.geo_id_map.get_source_ids(geo_id)[0])
 
             #perform unpacking of fragment and detector header info
             frag_header = unpacker.get_frh_data(frag)[0]

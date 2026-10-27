@@ -9,7 +9,7 @@ Description: Python script to write WIB2 frames from DUNE-DAQ HDF5 files to bina
 
 import argparse
 
-from hdf5libs import HDF5RawDataFile
+import rawdatafilelibs
 import daqdataformats
 import fddetdataformats
 
@@ -26,8 +26,15 @@ def Debug(x):
         print(x)
 
 
+def wib_source_ids(h5file, record_id):
+    """SourceIDs of the record's WIB fragments (any fragment type with WIB in its name), sorted."""
+    wib_types = [t for t in daqdataformats.FragmentType.__members__.values()
+                 if "WIB" in daqdataformats.fragment_type_to_string(t)]
+    return [s for t in wib_types for s in h5file[record_id].source_ids(fragment_type=t)]
+
+
 def main(args):
-    h5file = HDF5RawDataFile(args.file_name)
+    h5file = rawdatafilelibs.open(args.file_name)
 
     records = h5file.get_all_record_ids()
     total_records = len(records)
@@ -36,7 +43,7 @@ def main(args):
     if args.n_records > total_records:
         raise Exception(f"Number of specified records is greater than the total {total}")
 
-    n_links = len([f for f in h5file.get_fragment_dataset_paths(records[0]) if "WIB" in f]) # exclude other fragments in the record that are not WIB frames
+    n_links = len(wib_source_ids(h5file, records[0])) # exclude other fragments in the record that are not WIB frames
     if args.link >= n_links:
         raise Exception(f"Link number out of range.")
 
@@ -45,14 +52,12 @@ def main(args):
         total_frames = 0
         # loop over all triggers
         for i in range(args.n_records):
-            header = h5file.get_record_header_dataset_path(records[i]) # trigger number starts at 1
-            Debug(header)
+            Debug(f"record {records[i]}") # trigger number starts at 1
 
-            fragments = h5file.get_fragment_dataset_paths(records[i])
-            fragments = [f for f in fragments if "WIB" in f] # exclude other fragments in the record that are not WIB frames
+            fragments = wib_source_ids(h5file, records[i]) # exclude other fragments in the record that are not WIB frames
 
             Debug(f"loading fragment: {fragments[args.link]}")
-            f = h5file.get_frag(fragments[args.link])
+            f = h5file.get_frag(records[i], fragments[args.link])
             
             WIB2Frame_size = fddetdataformats.WIBEthFrame.sizeof()
 

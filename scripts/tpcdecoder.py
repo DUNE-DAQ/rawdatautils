@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from hdf5libs import HDF5RawDataFile
+import rawdatafilelibs
 import h5py
 
 import daqdataformats
@@ -27,7 +27,7 @@ import numpy as np
 def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det, channel_map):
 
     #get the file
-    h5_file = HDF5RawDataFile(filename)
+    h5_file = rawdatafilelibs.open(filename)
 
     #get the run number and operational environment out of the file attributes
     with h5py.File(h5_file.get_file_name(), 'r') as f:
@@ -84,8 +84,8 @@ def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det, ch
         print(f'Processing ',record_index)
 
         #get the trigger record header data and print it
-        trh = h5_file.get_trh(record_index.trigger,record_index.sequence)
-        n_frags = len(h5_file.get_fragment_dataset_paths(record_index.trigger,record_index.sequence))
+        trh = h5_file.get_trh((record_index.trigger,record_index.sequence))
+        n_frags = len(h5_file.get_fragment_source_ids((record_index.trigger,record_index.sequence)))
         trh_data = rawdatautils.unpack.utils.TriggerRecordHeaderUnpacker().get_trh_data(trh,n_frags)[0]
         print(trh_data)
 
@@ -99,11 +99,11 @@ def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det, ch
             for gid in geo_ids:
 
                 #print basic information from geo id
-                det_stream = 0xffff & (gid >> 48);
-                det_slot = 0xffff & (gid >> 32);
-                det_crate = 0xffff & (gid >> 16);
-                det_id = 0xffff & gid;
-                subdet = detdataformats.DetID.Subdetector(det_id)
+                geo_id = detdataformats.GeoID.decode(gid)
+                det_stream = geo_id.stream_id
+                det_slot = geo_id.slot_id
+                det_crate = geo_id.crate_id
+                subdet = geo_id.subdetector()
                 det_name = detdataformats.DetID.subdetector_to_string(subdet)
                 print(f'\tProcessing subdetector {det_name}, '
                       f'crate {det_crate}, '
@@ -111,7 +111,7 @@ def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det, ch
                       f'stream {det_stream}')
 
                 #get the fragment
-                frag = h5_file.get_frag(r,gid)
+                frag = h5_file.get_frag(r,h5_file.geo_id_map.get_source_ids(geo_id)[0])
 
                 unpacker = rawdatautils.unpack.utils.FragmentUnpacker()
                 frag_header = unpacker.get_frh_data(frag)[0]
