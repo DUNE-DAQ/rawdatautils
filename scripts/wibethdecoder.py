@@ -147,7 +147,9 @@ def main(filenames, nrecords, nskip, channel_map, print_headers, print_adc_stats
             #end gid loop
 
             if check_timestamps:
-                timestamps_frame0 = np.array([ fddetdataformats.WIBEthFrame(h5_file.get_frag(r,h5_file.geo_id_map.get_source_ids(detdataformats.GeoID.decode(gid))[0]).get_data()).get_timestamp() for gid in wib_geo_ids ])
+                def source_id_of(gid):
+                    return h5_file.geo_id_map.get_source_ids(detdataformats.GeoID.decode(gid))[0]
+                timestamps_frame0 = np.array([ fddetdataformats.WIBEthFrame(h5_file.get_frag(r,source_id_of(gid)).get_data()).get_timestamp() for gid in wib_geo_ids ])
                 timestamps_frame0_diff = timestamps_frame0 - timestamps_frame0[0]
 
                 if not quiet or np.any(timestamps_frame0_diff):

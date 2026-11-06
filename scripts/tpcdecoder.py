@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import rawdatafilelibs
-import h5py
 
 import daqdataformats
 import detdataformats
@@ -29,11 +28,10 @@ def main(filename, nrecords, nskip, print_adc_stats, print_wvfm_samples, det, ch
     #get the file
     h5_file = rawdatafilelibs.open(filename)
 
-    #get the run number and operational environment out of the file attributes
-    with h5py.File(h5_file.get_file_name(), 'r') as f:
-        run_number = f.attrs["run_number"]
-        op_env = f.attrs["operational_environment"]
-        print(f'Processing file {h5_file.get_file_name()}. run_number={run_number}, operational_environemnt={op_env}')
+    #get the run number and operational environment out of the file metadata
+    run_number = h5_file.metadata.run_number
+    op_env = h5_file.metadata.operational_environment
+    print(f'Processing file {h5_file.get_file_name()}. run_number={run_number}, operational_environemnt={op_env}')
 
     #fill in appropriate channel name if we can tell from operational_environment
     openv_channel_map=None

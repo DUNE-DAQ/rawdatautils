@@ -56,7 +56,7 @@ https://dune-daq-sw.readthedocs.io/en/latest/packages/rawdatautils/
 
         is_trigger_records = h5file.is_trigger_record_type()
         if not is_trigger_records and not h5file.is_timeslice_type():
-            sys.exit(f"The file holds neither trigger records nor timeslices. Exiting...\n")
+            sys.exit("The file holds neither trigger records nor timeslices. Exiting...\n")
 
         try:
             records = h5file.get_all_record_ids()
