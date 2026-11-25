@@ -732,7 +732,7 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
         return self.unpacker.get_n_frames_stream(frag)
 
     def get_daq_header_version(self,frag):
-        return self.frame_obj(frag.get_data()).get_daqheader().version
+        return self.frame_obj(frag.get_data()).daq_header.version
 
     def get_timestamp_first(self,frag):
         return self.frame_obj(frag.get_data()).get_timestamp()
@@ -741,7 +741,7 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
         return 0
 
     def get_det_crate_slot_stream(self,frag):
-        dh = self.frame_obj(frag.get_data()).get_daqheader()
+        dh = self.frame_obj(frag.get_data()).daq_header
         return dh.det_id, dh.crate_id, dh.slot_id, dh.link_id
 
     def get_det_header_data(self,frag):
@@ -772,7 +772,6 @@ class DAPHNEStreamUnpacker(DetectorFragmentUnpacker):
 
         adcs = self.unpacker.np_array_adc_stream(frag)
         frame = self.frame_obj(frag.get_data())
-        dh = frame.get_header()
         det, crate, slot, stream = self.get_det_crate_slot_stream(frag)
         daphne_chans = [ frame.get_channel0(), frame.get_channel1(), frame.get_channel2(), frame.get_channel3() ]
         channels = [ self.channel_map.get_offline_channel_from_det_crate_slot_stream_chan(det, crate, slot, stream, c) for c in daphne_chans ]
